@@ -1,18 +1,23 @@
 import ReactFlow, {
-  MiniMap,
   Controls,
   Background,
   useNodesState,
   useEdgesState,
   addEdge,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
-import { useCallback, useRef } from 'react';
+} from "reactflow";
+import "reactflow/dist/style.css";
+import { useCallback, useRef } from "react";
+import {
+  Grip,
+  MessageCircleMore,
+  Play,
+  SquareMousePointer,
+} from "lucide-react";
 
-import UserQueryNode from './nodes/UserQueryNode';
-import KnowledgeBaseNode from './nodes/KnowledgeBaseNode';
-import LLMNode from './nodes/LLMNode';
-import OutputNode from './nodes/OutputNode';
+import UserQueryNode from "./nodes/UserQueryNode";
+import KnowledgeBaseNode from "./nodes/KnowledgeBaseNode";
+import LLMNode from "./nodes/LLMNode";
+import OutputNode from "./nodes/OutputNode";
 
 const nodeTypes = {
   userQuery: UserQueryNode,
@@ -29,112 +34,137 @@ const Workspace = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const reactFlowWrapper = useRef(null);
 
+  const handleDeleteNode = useCallback(
+    (nodeId) => {
+      setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+      setEdges((eds) =>
+        eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
+      );
+    },
+    [setNodes, setEdges]
+  );
+
+  const handleResetConnections = useCallback(
+    (nodeId) => {
+      setEdges((eds) =>
+        eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
+      );
+    },
+    [setEdges]
+  );
+
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
-  // This function handles when a component is dropped onto the workspace
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
-
-      // Get the React Flow bounds to calculate position
       const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
-      
-      // Get the node type that was dragged (stored in dataTransfer)
-      const type = event.dataTransfer.getData('application/reactflow');
+      const type = event.dataTransfer.getData("application/reactflow");
 
-      // Check if the dropped element is valid
-      if (typeof type === 'undefined' || !type) {
+      if (typeof type === "undefined" || !type) {
         return;
       }
 
-      // Calculate position where the node should be placed
       const position = {
         x: event.clientX - reactFlowBounds.left,
         y: event.clientY - reactFlowBounds.top,
       };
 
-      // Create a new node with unique ID and position
       const newNode = {
-        id: `${type}-${Date.now()}`, // Unique ID
-        type, // Node type (userQuery, llm, etc.)
+        id: `${type}-${Date.now()}`,
+        type,
         position,
-        data: { 
+        data: {
           label: `${type} Node`,
-          // You can add more data properties here for configuration
+          onDelete: handleDeleteNode,
+          onResetConnections: handleResetConnections,
         },
       };
 
-      // Add the new node to our nodes state
       setNodes((nds) => nds.concat(newNode));
     },
-    [setNodes]
+    [setNodes, handleDeleteNode, handleResetConnections]
   );
 
-  // This allows the drop to happen
   const onDragOver = useCallback((event) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+    event.dataTransfer.dropEffect = "move";
   }, []);
 
   return (
     <div className="w-full h-full bg-gray-50 relative" ref={reactFlowWrapper}>
-      {nodes.length === 0 ? (
-        // Empty state
-        <div 
-          className="absolute inset-0 flex flex-col items-center justify-center"
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        nodeTypes={nodeTypes}
+        fitView
+      >
+        <div className="react-flow__controls-bottom-center">
+          <Controls />
+        </div>
+        <Background variant="dots" gap={12} size={1} />
+      </ReactFlow>
+      {nodes.length === 0 && (
+        <div
+          className="absolute inset-0 flex flex-col justify-center items-center gap-4 pointer-events-none"
           onDrop={onDrop}
           onDragOver={onDragOver}
         >
-          <div className="text-center">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">GenAI Stack</h2>
-            <p className="text-gray-600 mb-8">Drag & drop to get started</p>
-            
-            {/* Component preview */}
-            <div className="flex flex-col items-center gap-4 mb-8">
-              <div className="flex gap-4">
-                <div className="px-4 py-3 shadow-lg rounded-lg bg-white border-l-4 border-blue-500 min-w-48">
-                  <div className="font-semibold text-gray-800">Input</div>
-                  <div className="text-xs text-gray-500">User Query Component</div>
-                </div>
-                <div className="px-4 py-3 shadow-lg rounded-lg bg-white border-l-4 border-purple-500 min-w-48">
-                  <div className="font-semibold text-gray-800">LLM (OpenAI)</div>
-                  <div className="text-xs text-gray-500">AI model processing</div>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="px-4 py-3 shadow-lg rounded-lg bg-white border-l-4 border-green-500 min-w-48">
-                  <div className="font-semibold text-gray-800">Knowledge Base</div>
-                  <div className="text-xs text-gray-500">Document processing</div>
-                </div>
-                <div className="px-4 py-3 shadow-lg rounded-lg bg-white border-l-4 border-orange-500 min-w-48">
-                  <div className="font-semibold text-gray-800">Output</div>
-                  <div className="text-xs text-gray-500">Final response</div>
-                </div>
+          <div className="relative">
+            <div className="bg-white p-5 rounded-full shadow-lg">
+              <div className="relative w-12 h-12">
+                <Grip className="text-green-700 absolute bottom-4.5 right-3 w-8 h-8 opacity-70" />
+                <SquareMousePointer className="text-green-700 bg-white absolute top-1/2 left-3/5 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8" />
               </div>
             </div>
           </div>
+          <div className="text-center">
+            <p className="text-gray-600 font-medium text-lg">
+              Drag & drop to get started
+            </p>
+          </div>
         </div>
-      ) : (
-        // React Flow when nodes exist
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          nodeTypes={nodeTypes}
-          fitView
-        >
-          <MiniMap />
-          <Controls />
-          <Background variant="dots" gap={12} size={1} />
-        </ReactFlow>
       )}
+      <div className="absolute bottom-18 right-5 bg-green-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
+        <Play />
+      </div>
+      <div className="absolute bottom-4 right-5 bg-blue-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
+        <MessageCircleMore />
+      </div>
+      <style>{`
+        .react-flow__controls-bottom-center {
+          position: absolute;
+          bottom: 2px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 10;
+        }
+        
+        .react-flow__controls-bottom-center .react-flow__controls {
+          position: relative !important;
+          bottom: auto !important;
+          left: auto !important;
+          transform: none !important;
+          display: flex !important;
+          flex-direction: row !important;
+        }
+        
+        .react-flow__controls-bottom-center .react-flow__controls button {
+          transform: none !important;
+        }
+        
+        .react-flow__attribution {
+          display: none !important;
+        }
+      `}</style>
     </div>
   );
 };
