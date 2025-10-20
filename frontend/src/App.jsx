@@ -1,10 +1,15 @@
 import Dashboard from "./pages/Dashboard"
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import WorkflowBuilder from "./pages/WorkflowBuilder";
 
 const App = () => {
   return (
-    <div>
-      <Dashboard />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/workflow-builder" element={<WorkflowBuilder />} />
+      </Routes>
+    </Router>
   )
 }
 
