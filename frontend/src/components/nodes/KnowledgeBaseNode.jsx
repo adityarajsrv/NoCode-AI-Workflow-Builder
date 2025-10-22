@@ -104,7 +104,7 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 p-0.75 mt-34 !bg-orange-600"
+        className="w-3 h-3 p-0.75 mt-44 !bg-orange-600"
       />      
       <div className="px-5 py-3 flex items-center justify-between gap-3 border-b-3 border-gray-200">
         <div className='flex items-center justify-between gap-3'>
@@ -176,7 +176,7 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 p-0.75 mt-44 !bg-orange-500"
+        className="w-3 h-3 p-0.75 mt-54 !bg-orange-500"
       />
     </div>
   );

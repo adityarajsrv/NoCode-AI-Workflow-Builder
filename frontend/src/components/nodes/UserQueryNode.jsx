@@ -91,7 +91,7 @@ const UserQueryNode = ({ data, selected, id }) => {
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 p-0.75 !bg-blue-500"
+        className="w-3 h-3 p-0.75 mt-11 !bg-blue-500"
         style={{ top: '70%' }}
       />
     </div>

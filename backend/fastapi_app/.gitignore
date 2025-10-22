@@ -1,0 +1,78 @@
+# ============================
+# PYTHON / FASTAPI BASICS
+# ============================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+*.db
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Byte-compiled / cache
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ============================
+# ENVIRONMENT VARIABLES / CONFIG
+# ============================
+.env
+.env.*
+*.secret
+*.key
+secrets.json
+config.yaml
+config.yml
+
+# ============================
+# IDE / EDITOR FILES
+# ============================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# ============================
+# DATA / STORAGE
+# ============================
+# ChromaDB vector store (local database)
+chroma_store/
+chroma_data/
+chromadb/
+# Temporary uploads
+uploads/
+temp/
+tmp/
+
+# ============================
+# LOGS / OUTPUT
+# ============================
+logs/
+*.log
+*.out
+*.err
+
+# ============================
+# DOCKER / DEPLOYMENT
+# ============================
+# Ignore build caches and generated files
+**/Dockerfile~
+**/docker-compose.override.yml
+**/docker-compose.prod.yml
+*.pid
+
+# ============================
+# TESTS / COVERAGE
+# ============================
+.coverage
+htmlcov/
+pytest_cache/
+.cache/
