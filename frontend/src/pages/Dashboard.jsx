@@ -1,15 +1,22 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CreateStackPopup from '../components/CreateStackPopup';
 import Navbar from '../components/Navbar';
 
 const Dashboard = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [stacks, setStacks] = useState([]);
+  const navigate = useNavigate(); 
 
   const handleCreateStack = (stackData) => {
-    setStacks(prev => [...prev, { ...stackData, id: Date.now() }]);
+    const newStack = { ...stackData, id: Date.now() };
+    setStacks(prev => [...prev, newStack]);
     setIsPopupOpen(false);
     console.log('Creating stack:', stackData);
+  };
+
+  const handleEditStack = (stackName) => {
+    navigate(`/workflow-builder/${encodeURIComponent(stackName)}`);
   };
 
   return (
@@ -56,7 +63,10 @@ const Dashboard = () => {
                   <p className="text-gray-600 text-sm leading-relaxed">{stack.description}</p>
                 </div>
                 <div className="flex justify-end">
-                  <button className="flex items-center gap-2 text-gray-700 hover:text-gray-800 font-medium border border-gray-300 px-4 py-2 rounded-md hover:border-gray-400 hover:bg-gray-50 transition-all duration-200">
+                  <button 
+                    onClick={() => handleEditStack(stack.name)}
+                    className="flex items-center gap-2 text-gray-700 hover:text-gray-800 font-medium border border-gray-300 px-4 py-2 rounded-md hover:border-gray-400 hover:bg-gray-50 transition-all duration-200"
+                  >
                     Edit Stack
                     <svg className="w-4 h-4" fill="none" strokeWidth={1.5} stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />

@@ -7,7 +7,7 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/workflow-builder" element={<WorkflowBuilder />} />
+        <Route path="/workflow-builder/:stackName" element={<WorkflowBuilder />} />
       </Routes>
     </Router>
   )

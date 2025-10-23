@@ -6,7 +6,7 @@ import ReactFlow, {
   addEdge,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Grip,
   MessageCircleMore,
@@ -18,6 +18,7 @@ import UserQueryNode from "./nodes/UserQueryNode";
 import KnowledgeBaseNode from "./nodes/KnowledgeBaseNode";
 import LLMNode from "./nodes/LLMNode";
 import OutputNode from "./nodes/OutputNode";
+import ChatPopup from "./ChatPopup";
 
 const nodeTypes = {
   userQuery: UserQueryNode,
@@ -32,6 +33,7 @@ const initialEdges = [];
 const Workspace = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const reactFlowWrapper = useRef(null);
 
   const handleDeleteNode = useCallback(
@@ -136,9 +138,19 @@ const Workspace = () => {
       <div className="absolute bottom-18 right-5 bg-green-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
         <Play />
       </div>
-      <div className="absolute bottom-4 right-5 bg-blue-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
+      <div 
+        className="absolute bottom-4 right-5 bg-blue-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+        onClick={() => setIsChatOpen(true)}
+      >
         <MessageCircleMore />
       </div>
+      
+      {/* Chat Popup */}
+      <ChatPopup 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
+      />
+
       <style>{`
         .react-flow__controls-bottom-center {
           position: absolute;

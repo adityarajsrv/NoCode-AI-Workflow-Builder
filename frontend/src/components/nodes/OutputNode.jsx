@@ -5,34 +5,26 @@ import { Handle, Position } from 'reactflow';
 
 const OutputNode = ({ data, selected, id }) => {
   const [showSettings, setShowSettings] = useState(false);
-    const settingsRef = useRef(null);
-  
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (settingsRef.current && !settingsRef.current.contains(event.target)) {
-          setShowSettings(false);
-        }
-      };
-  
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, []);
-  
-    const handleDeleteNode = () => {
-      if (data.onDelete) {
-        data.onDelete(id);
+  const settingsRef = useRef(null);
+  const [outputText, setOutputText] = useState('');
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target)) {
+        setShowSettings(false);
       }
-      setShowSettings(false);
     };
-  
-    const handleResetConnections = () => {
-      if (data.onResetConnections) {
-        data.onResetConnections(id);
-      }
-      setShowSettings(false);
-    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (data.output) setOutputText(data.output);
+  }, [data.output]);
+
+  const handleDeleteNode = () => { if (data.onDelete) data.onDelete(id); setShowSettings(false); };
+  const handleResetConnections = () => { if (data.onResetConnections) data.onResetConnections(id); setShowSettings(false); };
+
   return (
     <div className={`shadow-lg rounded-lg bg-white min-w-80 ${selected ? 'ring-2 ring-gray-300' : ''}`}>
       {showSettings && (
@@ -87,6 +79,7 @@ const OutputNode = ({ data, selected, id }) => {
             rows="4"
             placeholder="Output will be generated based on query"
             readOnly
+            value={outputText}
           />
         </div>
       </div>

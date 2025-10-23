@@ -2,86 +2,92 @@
 import { BookOpen, Settings, Trash2, Unlink, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Handle, Position } from 'reactflow';
+import axios from 'axios'; // import axios for backend requests
 
 const KnowledgeBaseNode = ({ data, selected, id }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [fileInputRef, setFileInputRef] = useState(null);
-    const settingsRef = useRef(null);
-  
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (settingsRef.current && !settingsRef.current.contains(event.target)) {
-          setShowSettings(false);
-        }
-      };
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, []);
-    const handleDeleteNode = () => {
-      if (data.onDelete) {
-        data.onDelete(id);
-      }
-      setShowSettings(false);
-    };
-    const handleResetConnections = () => {
-      if (data.onResetConnections) {
-        data.onResetConnections(id);
-      }
-      setShowSettings(false);
-    };
-    const handleDragOver = (e) => {
-      e.preventDefault();
-      setIsDragOver(true);
-    };
-    const handleDragLeave = (e) => {
-      e.preventDefault();
-      setIsDragOver(false);
-    };
-    const handleDrop = (e) => {
-      e.preventDefault();
-      setIsDragOver(false);
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        const file = files[0];
-        if (file.type === 'application/pdf' || file.type === 'text/plain') {
-          setUploadedFile(file);
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            console.log('File content:', event.target.result);
-          };
-          reader.readAsText(file);
-        } else {
-          alert('Please upload a PDF or text file only.');
-        }
+  const settingsRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target)) {
+        setShowSettings(false);
       }
     };
-    const handleFileSelect = (e) => {
-      const file = e.target.files[0];
-      if (file) {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleDeleteNode = () => {
+    if (data.onDelete) data.onDelete(id);
+    setShowSettings(false);
+  };
+
+  const handleResetConnections = () => {
+    if (data.onResetConnections) data.onResetConnections(id);
+    setShowSettings(false);
+  };
+
+  const handleUploadToBackend = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await axios.post('http://localhost:8000/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      console.log('Backend response:', response.data);
+      alert('File uploaded successfully!');
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert('File upload failed. Check console for details.');
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type === 'application/pdf' || file.type === 'text/plain') {
         setUploadedFile(file);
+        handleUploadToBackend(file); // upload to backend
         const reader = new FileReader();
         reader.onload = (event) => {
           console.log('File content:', event.target.result);
         };
         reader.readAsText(file);
-        e.target.value = '';
-      }
-    };
-    const handleUploadClick = () => {
-      fileInputRef?.click();
-    };
-  
+      } else alert('Please upload a PDF or text file only.');
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploadedFile(file);
+      handleUploadToBackend(file); // upload to backend
+      const reader = new FileReader();
+      reader.onload = (event) => console.log('File content:', event.target.result);
+      reader.readAsText(file);
+      e.target.value = '';
+    }
+  };
+
+  const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
+  const handleDragLeave = (e) => { e.preventDefault(); setIsDragOver(false); };
+  const handleUploadClick = () => { fileInputRef?.click(); };
+
   return (
     <div className={`shadow-lg rounded-lg bg-white  min-w-80 ${selected ? 'ring-2 ring-gray-300' : ''}`}>
       {showSettings && (
-        <div 
-          ref={settingsRef}
-          className="absolute right-2 top-12 bg-white rounded-lg shadow-xl border border-gray-200 z-10 min-w-48"
-        >
+        <div ref={settingsRef} className="absolute right-2 top-12 bg-white rounded-lg shadow-xl border border-gray-200 z-10 min-w-48">
           <div className="p-1">
             <button
               onClick={handleResetConnections}
@@ -101,11 +107,7 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
           </div>
         </div>
       )}
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="w-3 h-3 p-0.75 mt-44 !bg-orange-600"
-      />      
+      <Handle type="target" position={Position.Left} className="w-3 h-3 p-0.75 mt-44 !bg-orange-600" />      
       <div className="px-5 py-3 flex items-center justify-between gap-3 border-b-3 border-gray-200">
         <div className='flex items-center justify-between gap-3'>
           <BookOpen className="w-6 h-6 text-gray-600" />
@@ -173,11 +175,7 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
       </div>
       <h3 className="flex justify-start text-sm ml-2 mt-2 pb-5">Query</h3>
       <h3 className="flex justify-end text-sm mr-2 pb-5">Context</h3>
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="w-3 h-3 p-0.75 mt-54 !bg-orange-500"
-      />
+      <Handle type="source" position={Position.Right} className="w-3 h-3 p-0.75 mt-54 !bg-orange-500" />
     </div>
   );
 };

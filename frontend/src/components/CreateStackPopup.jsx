@@ -47,7 +47,7 @@ const CreateStackPopup = ({ isOpen, onClose, onCreate }) => {
           <textarea
             value={stackDescription}
             onChange={(e) => setStackDescription(e.target.value)}
-            placeholder="Chat with your pdf does"
+            placeholder="Chat with your pdf notes"
             rows="3"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
           />
