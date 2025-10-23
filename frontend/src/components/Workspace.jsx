@@ -34,6 +34,7 @@ const Workspace = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [hoveredIcon, setHoveredIcon] = useState(null);
   const reactFlowWrapper = useRef(null);
 
   const handleDeleteNode = useCallback(
@@ -135,17 +136,38 @@ const Workspace = () => {
           </div>
         </div>
       )}
-      <div className="absolute bottom-18 right-5 bg-green-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
-        <Play />
-      </div>
-      <div 
-        className="absolute bottom-4 right-5 bg-blue-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
-        onClick={() => setIsChatOpen(true)}
-      >
-        <MessageCircleMore />
-      </div>
       
-      {/* Chat Popup */}
+      {/* Build Stack Button with Hover Text */}
+      <div className="absolute bottom-18 right-5 flex items-center gap-2">
+        {hoveredIcon === 'build' && (
+          <div className="bg-white text-black px-2 py-2 rounded-md text-sm font-medium whitespace-nowrap shadow-lg">
+            Build Stack
+          </div>
+        )}
+        <div 
+          className="bg-green-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow flex items-center justify-center"
+          onMouseEnter={() => setHoveredIcon('build')}
+          onMouseLeave={() => setHoveredIcon(null)}
+        >
+          <Play className="w-5 h-5" />
+        </div>
+      </div>
+      <div className="absolute bottom-4 right-5 flex items-center gap-2">
+        {hoveredIcon === 'chat' && (
+          <div className="bg-white text-black px-2 py-2 rounded-md text-sm font-medium whitespace-nowrap shadow-lg">
+            Chat with Stack
+          </div>
+        )}
+        <div 
+          className="bg-blue-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow flex items-center justify-center"
+          onClick={() => setIsChatOpen(true)}
+          onMouseEnter={() => setHoveredIcon('chat')}
+          onMouseLeave={() => setHoveredIcon(null)}
+        >
+          <MessageCircleMore className="w-5 h-5" />
+        </div>
+      </div>
+
       <ChatPopup 
         isOpen={isChatOpen} 
         onClose={() => setIsChatOpen(false)} 
