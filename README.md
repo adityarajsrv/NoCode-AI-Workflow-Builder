@@ -1,7 +1,7 @@
 # 🧩 No-Code AI Workflow Builder
 
 A **No-Code/Low-Code web application** that allows users to visually create, configure, and execute **intelligent workflows** using drag-and-drop components.
-Users can design custom pipelines that integrate **document knowledge extraction**, **LLM-based reasoning**, and **chat-based interaction** — without writing any code.
+Users can design custom pipelines that integrate **document knowledge extraction**, **LLM-based reasoning**, and **chat-based interaction** without writing any code.
 
 ---
 
