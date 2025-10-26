@@ -137,7 +137,6 @@ const Workspace = () => {
         </div>
       )}
       
-      {/* Build Stack Button with Hover Text */}
       <div className="absolute bottom-18 right-5 flex items-center gap-2">
         {hoveredIcon === 'build' && (
           <div className="bg-white text-black px-2 py-2 rounded-md text-sm font-medium whitespace-nowrap shadow-lg">
