@@ -19,7 +19,6 @@ const Navbar = () => {
           Login
         </button>
       </div>
-      
       <LoginPopup
         isOpen={isAuthPopupOpen}
         onClose={() => setIsAuthPopupOpen(false)}

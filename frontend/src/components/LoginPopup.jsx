@@ -88,7 +88,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50">
       <div 
         ref={popupRef}
-        className="bg-white rounded-2xl shadow-2xl w-96 p-8 border border-gray-100"
+        className="bg-white rounded-2xl shadow-2xl w-[450px] px-10 py-6 border border-gray-100"
       >
         <div className="flex items-center justify-center mb-5">
           <img src={logo} alt="GenAI Stack" className="h-11 w-11 mr-1" />
@@ -103,7 +103,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            SIGN IN
+            LOGIN
           </button>
           <button
             onClick={() => setIsLogin(false)}
@@ -182,7 +182,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
               type="submit"
               className="cursor-pointer px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm hover:shadow-md"
             >
-              {isLogin ? 'Sign In' : 'Create Account'}
+              {isLogin ? 'Login' : 'Create Account'}
             </button>
           </div>
         </form>
@@ -193,7 +193,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
               onClick={switchMode}
               className="cursor-pointer ml-1 text-green-600 hover:text-green-700 font-medium transition-colors"
             >
-              {isLogin ? 'Sign up' : 'Sign in'}
+              {isLogin ? 'Sign up' : 'Login'}
             </button>
           </span>
         </div>
