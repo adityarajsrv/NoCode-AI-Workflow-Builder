@@ -1,16 +1,20 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import logo from '../assets/logo.png';
 
-const LoginPopup = ({ isOpen, onClose }) => {
+const LoginPopup = ({ isOpen, onClose, onLoginSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    username: ''
+    firstName: '',
+    lastName: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const popupRef = useRef(null);
 
@@ -38,47 +42,80 @@ const LoginPopup = ({ isOpen, onClose }) => {
       ...prev,
       [name]: value
     }));
+    setError(''); 
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (isLogin) {
-      console.log('Login:', { email: formData.email, password: formData.password });
-    } else {
-      if (formData.password !== formData.confirmPassword) {
-        alert("Passwords don't match!");
-        return;
+    setLoading(true);
+    setError('');
+
+    try {
+      if (!isLogin && formData.password !== formData.confirmPassword) {
+        throw new Error("Passwords don't match!");
       }
-      console.log('Signup:', formData);
+
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const payload = isLogin 
+        ? { email: formData.email, password: formData.password }
+        : {
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+            firstName: formData.firstName,
+            lastName: formData.lastName
+          };
+
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem('token', data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data));        
+        onLoginSuccess(data.data);        
+        handleCancel();
+      } else {
+        throw new Error(data.message || 'Authentication failed');
+      }
+    } catch (error) {
+      setError(error.message);
+      console.error('Authentication error:', error);
+    } finally {
+      setLoading(false);
     }
-    
-    setFormData({
-      email: '',
-      password: '',
-      confirmPassword: '',
-      username: ''
-    });
-    onClose();
   };
 
   const switchMode = () => {
     setIsLogin(!isLogin);
     setFormData({
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
-      username: ''
+      firstName: '',
+      lastName: ''
     });
+    setError('');
   };
 
   const handleCancel = () => {
     setFormData({
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
-      username: ''
+      firstName: '',
+      lastName: ''
     });
+    setError('');
+    setLoading(false);
     onClose();
   };
 
@@ -88,12 +125,17 @@ const LoginPopup = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50">
       <div 
         ref={popupRef}
-        className="bg-white rounded-2xl shadow-2xl w-[450px] px-10 py-6 border border-gray-100"
+        className="bg-white rounded-2xl shadow-2xl w-[450px] px-10 py-3 border border-gray-100"
       >
-        <div className="flex items-center justify-center mb-5">
+        <div className="flex items-center justify-center mb-2">
           <img src={logo} alt="GenAI Stack" className="h-11 w-11 mr-1" />
           <h2 className="text-2xl font-bold text-gray-900">GenAI Stack</h2>
-        </div>        
+        </div>                
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
         <div className="flex border-b border-gray-200 mb-4">
           <button
             onClick={() => setIsLogin(true)}
@@ -103,7 +145,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            LOGIN
+            SIGN IN
           </button>
           <button
             onClick={() => setIsLogin(false)}
@@ -118,24 +160,54 @@ const LoginPopup = ({ isOpen, onClose }) => {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                placeholder="Enter your username"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                required={!isLogin}
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Username *
+                </label>
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  placeholder="Enter your username"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    placeholder="First name"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    placeholder="Last name"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  />
+                </div>
+              </div>
+            </>
           )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+              Email *
             </label>
             <input
               type="email"
@@ -149,7 +221,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
+              Password *
             </label>
             <input
               type="password"
@@ -164,7 +236,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
           {!isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password
+                Confirm Password *
               </label>
               <input
                 type="password"
@@ -173,16 +245,17 @@ const LoginPopup = ({ isOpen, onClose }) => {
                 onChange={handleInputChange}
                 placeholder="Confirm your password"
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                required={!isLogin}
+                required
               />
             </div>
           )}
           <div className="flex justify-center space-x-3 pt-1">
             <button
               type="submit"
-              className="cursor-pointer px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm hover:shadow-md"
+              disabled={loading}
+              className="cursor-pointer px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLogin ? 'Login' : 'Create Account'}
+              {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
             </button>
           </div>
         </form>
@@ -193,7 +266,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
               onClick={switchMode}
               className="cursor-pointer ml-1 text-green-600 hover:text-green-700 font-medium transition-colors"
             >
-              {isLogin ? 'Sign up' : 'Login'}
+              {isLogin ? 'Sign up' : 'Sign in'}
             </button>
           </span>
         </div>
