@@ -36,12 +36,12 @@ const Sidebar = ({ stackName }) => {
       </div>
       <div
         className="flex items-center justify-between w-full text-gray-700 hover:text-gray-800 font-medium border border-gray-300 px-4 py-3 rounded-md hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 mb-2 cursor-grab active:cursor-grabbing"
-        onDragStart={(event) => onDragStart(event, 'llm')}
+        onDragStart={(event) => onDragStart(event, 'knowledgeBase')}
         draggable
       >
         <div className="flex items-center gap-2">
-          <Sparkles />
-          LLM (Gemini)
+          <BookOpen />
+          Knowledge Base
         </div>
         <svg className="w-5 h-5" fill="none" strokeWidth={1.5} stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -49,12 +49,12 @@ const Sidebar = ({ stackName }) => {
       </div>
       <div
         className="flex items-center justify-between w-full text-gray-700 hover:text-gray-800 font-medium border border-gray-300 px-4 py-3 rounded-md hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 mb-2 cursor-grab active:cursor-grabbing"
-        onDragStart={(event) => onDragStart(event, 'knowledgeBase')}
+        onDragStart={(event) => onDragStart(event, 'llm')}
         draggable
       >
         <div className="flex items-center gap-2">
-          <BookOpen />
-          Knowledge Base
+          <Sparkles />
+          LLM (Gemini)
         </div>
         <svg className="w-5 h-5" fill="none" strokeWidth={1.5} stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />

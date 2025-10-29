@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CreateStackPopup from "../components/CreateStackPopup";
 import Navbar from "../components/Navbar";
+import { stackAPI } from "../../../backend/auth/utils/api";
 
 const Dashboard = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -10,37 +11,52 @@ const Dashboard = () => {
   const [editingStack, setEditingStack] = useState(null);
   const [isRenamePopupOpen, setIsRenamePopupOpen] = useState(false);
   const [renameData, setRenameData] = useState({ name: '', description: '' });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const [userTier, setUserTier] = useState("free");
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user") || '{"tier": "free"}');
+    const userData = JSON.parse(localStorage.getItem("user") || '{}');
     setUser(userData);
-    setUserTier(userData.tier);
-    
-    if (userData && userData.email) {
-      const savedStacks = JSON.parse(localStorage.getItem('userWorkflows') || '[]');
-      setStacks(savedStacks);
-    }
+    loadStacks();
   }, []);
 
-  const isLoggedIn = user && user.email;
-  const canCreateMoreWorkflows = userTier === "premium" || stacks.length < 3;
+  const loadStacks = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const userData = JSON.parse(localStorage.getItem("user") || '{}');
+      
+      if (userData && userData.token) {
+        const stacksData = await stackAPI.getStacks();
+        setStacks(stacksData || []);
+      }
+    } catch {
+      setError('Failed to load stacks. Please try again.');
+      setStacks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleCreateStack = (stackData) => {
+  const isLoggedIn = user && user.token;
+  const userStacks = stacks || [];
+  const canCreateMoreStacks = userStacks.length < 3;
+
+  const handleCreateStack = async (stackData) => {
     if (!isLoggedIn) {
       alert("Please login to create stacks!");
       return;
     }
 
-    const newStack = { ...stackData, id: Date.now() };
-    const updatedStacks = [...stacks, newStack];
-    
-    setStacks(updatedStacks);
-    localStorage.setItem('userWorkflows', JSON.stringify(updatedStacks));
-    
-    setIsPopupOpen(false);
+    try {
+      const newStack = await stackAPI.createStack(stackData);
+      setStacks(prev => [...prev, newStack]);
+      setIsPopupOpen(false);
+    } catch (err) {
+      alert(err.message || 'Failed to create stack');
+    }
   };
 
   const handleEditStack = (stackName) => {
@@ -53,34 +69,40 @@ const Dashboard = () => {
 
   const handleRenameStack = (stack) => {
     setEditingStack(stack);
-    setRenameData({ name: stack.name, description: stack.description });
+    setRenameData({ 
+      name: stack.name, 
+      description: stack.description || '' 
+    });
     setIsRenamePopupOpen(true);
   };
 
-  const handleUpdateStack = () => {
+  const handleUpdateStack = async () => {
     if (!renameData.name.trim()) {
       alert("Stack name is required!");
       return;
     }
 
-    const updatedStacks = stacks.map(stack => 
-      stack.id === editingStack.id 
-        ? { ...stack, name: renameData.name, description: renameData.description }
-        : stack
-    );
-    
-    setStacks(updatedStacks);
-    localStorage.setItem('userWorkflows', JSON.stringify(updatedStacks));
-    setIsRenamePopupOpen(false);
-    setEditingStack(null);
-    setRenameData({ name: '', description: '' });
+    try {
+      const updatedStack = await stackAPI.updateStack(editingStack._id, renameData);
+      setStacks(prev => prev.map(stack => 
+        stack._id === editingStack._id ? updatedStack : stack
+      ));
+      setIsRenamePopupOpen(false);
+      setEditingStack(null);
+      setRenameData({ name: '', description: '' });
+    } catch (err) {
+      alert(err.message || 'Failed to update stack');
+    }
   };
 
-  const handleDeleteStack = (stackId) => {
+  const handleDeleteStack = async (stackId) => {
     if (window.confirm("Are you sure you want to delete this stack? This action cannot be undone.")) {
-      const updatedStacks = stacks.filter(stack => stack.id !== stackId);
-      setStacks(updatedStacks);
-      localStorage.setItem('userWorkflows', JSON.stringify(updatedStacks));
+      try {
+        await stackAPI.deleteStack(stackId);
+        setStacks(prev => prev.filter(stack => stack._id !== stackId));
+      } catch (err) {
+        alert(err.message || 'Failed to delete stack');
+      }
     }
   };
 
@@ -90,31 +112,43 @@ const Dashboard = () => {
       return;
     }
     
-    if (!canCreateMoreWorkflows) {
-      alert("🚫 Free tier limited to 3 workflows. Upgrade to Premium!");
+    if (!canCreateMoreStacks) {
+      alert("🚫 Free tier limited to 3 stacks. Upgrade to Premium!");
       return;
     }
     setIsPopupOpen(true);
   };
 
-  const remainingWorkflows = 3 - stacks.length;
+  if (loading) {
+    return (
+      <div className="w-full h-screen bg-gray-100 flex items-center justify-center">
+        <Navbar />
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your stacks...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-screen bg-gray-100">
       <Navbar />
-      {userTier === "premium" && (
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2 px-4 text-center">
-          🚀 Premium Member - Unlimited Workflows Active!
+      
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-center">
+          {error}
         </div>
       )}
-      <div className="flex flex-row justify-between px-20 mt-15">
-        <h2 className="text-2xl font-semibold mt-2">My Stacks</h2>
+      
+      <div className="flex flex-row justify-between px-6 md:px-20 mt-8 md:mt-15">
+        <h2 className="text-xl md:text-2xl font-semibold mt-2">My Stacks</h2>
         <button
           onClick={handleCreateButtonClick}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-green-700 transition-colors"
+          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-green-700 transition-colors text-sm md:text-base"
         >
           <svg
-            className="w-5 h-5"
+            className="w-4 h-4 md:w-5 md:h-5"
             fill="none"
             strokeWidth={1.5}
             stroke="currentColor"
@@ -128,16 +162,16 @@ const Dashboard = () => {
           </svg>
           {!isLoggedIn 
             ? "Login to Create" 
-            : userTier === "premium"
-              ? "Create New Stack"
-              : `Create Stack (${remainingWorkflows > 0 ? remainingWorkflows : 0} left)`
+            : "Create Stack"
           }
         </button>
       </div>
-      <hr className="w-[89%] mt-3 text-gray-300 ml-20" />
+      
+      <hr className="w-full md:w-[89%] mt-3 text-gray-300 mx-auto" />
+      
       {!isLoggedIn ? (
-        <div className="flex flex-row justify-center items-center">
-          <div className="bg-white h-48 w-94 rounded-xl shadow-md mt-25 p-5 text-center">
+        <div className="flex flex-row justify-center items-center px-4">
+          <div className="bg-white h-48 w-full max-w-md rounded-xl shadow-md mt-20 p-6 text-center">
             <h2 className="text-2xl font-semibold mb-3">Welcome to GenAI Stack</h2>
             <p className="text-gray-500 py-1 mb-4">
               Please login to start building your AI workflows and create amazing stacks!
@@ -147,17 +181,17 @@ const Dashboard = () => {
                 const loginButton = document.querySelector('[class*="bg-green-600"]');
                 if (loginButton) loginButton.click();
               }}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors cursor-pointer"
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors cursor-pointer"
             >
               Login to Get Started
             </button>
           </div>
         </div>
-      ) : stacks.length === 0 ? (
-        <div className="flex flex-row justify-center items-center">
-          <div className="bg-white h-48 w-94 rounded-xl shadow-md mt-25 p-5">
-            <h2 className="text-2xl font-semibold mb-1">Create New Stack</h2>
-            <p className="text-gray-500 py-1 mb-4 w-[90%]">
+      ) : userStacks.length === 0 ? (
+        <div className="flex flex-row justify-center items-center px-4">
+          <div className="bg-white h-48 w-full max-w-md rounded-xl shadow-md mt-20 p-6">
+            <h2 className="text-xl md:text-2xl font-semibold mb-1">Create New Stack</h2>
+            <p className="text-gray-500 py-1 mb-4">
               Start building your generative AI apps with our essential tools and frameworks
             </p>
             <button
@@ -165,7 +199,7 @@ const Dashboard = () => {
               className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-green-700 transition-colors"
             >
               <svg
-                className="w-5 h-5"
+                className="w-4 h-4 md:w-5 md:h-5"
                 fill="none"
                 strokeWidth={1.5}
                 stroke="currentColor"
@@ -182,32 +216,33 @@ const Dashboard = () => {
           </div>
         </div>
       ) : (
-        <div className="px-20 mt-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {stacks.map((stack) => (
+        <div className="px-4 md:px-20 mt-6 md:mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {userStacks.map((stack) => (
               <StackCard 
-                key={stack.id}
+                key={stack._id}
                 stack={stack}
                 onEdit={handleEditStack}
                 onRename={() => handleRenameStack(stack)}
-                onDelete={() => handleDeleteStack(stack.id)}
+                onDelete={() => handleDeleteStack(stack._id)}
               />
             ))}
           </div>
-          {stacks.length >= 3 && userTier !== "premium" && (
-            <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+          
+          {userStacks.length >= 3 && (
+            <div className="mt-6 md:mt-8 bg-yellow-50 border border-yellow-200 rounded-xl p-4 md:p-6 text-center mx-4 md:mx-0">
               <h3 className="text-lg font-semibold text-yellow-800 mb-2">
                 🚀 Ready for Unlimited Power?
               </h3>
-              <p className="text-yellow-700 mb-4">
-                You&apos;ve reached the free tier limit of 3 workflows. Upgrade to Premium for unlimited creations!
+              <p className="text-yellow-700 mb-4 text-sm md:text-base">
+                You&apos;ve reached the free tier limit of 3 stacks. Upgrade to Premium for unlimited creations!
               </p>
               <button
                 onClick={() => {
                   const premiumButton = document.querySelector('[class*="bg-gradient-to-r from-purple-600"]');
                   if (premiumButton) premiumButton.click();
                 }}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all cursor-pointer"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all cursor-pointer text-sm md:text-base"
               >
                 Upgrade to Premium
               </button>
@@ -215,60 +250,86 @@ const Dashboard = () => {
           )}
         </div>
       )}
+      
       <CreateStackPopup
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         onCreate={handleCreateStack}
-      />      
+      />
+      
       {isRenamePopupOpen && (
-        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-96 p-6 border border-gray-200">
-            <h2 className="text-2xl font-semibold mb-2">Rename Stack</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={renameData.name}
-                onChange={(e) => setRenameData({...renameData, name: e.target.value})}
-                placeholder="Chat With PDF"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                value={renameData.description}
-                onChange={(e) => setRenameData({...renameData, description: e.target.value})}
-                placeholder="Chat with your pdf notes"
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-              />
-            </div>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setIsRenamePopupOpen(false);
-                  setEditingStack(null);
-                  setRenameData({ name: '', description: '' });
-                }}
-                className="cursor-pointer px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateStack}
-                className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                Update
-              </button>
-            </div>
-          </div>
-        </div>
+        <RenameStackPopup
+          renameData={renameData}
+          setRenameData={setRenameData}
+          onUpdate={handleUpdateStack}
+          onClose={() => {
+            setIsRenamePopupOpen(false);
+            setEditingStack(null);
+            setRenameData({ name: '', description: '' });
+          }}
+        />
       )}
+    </div>
+  );
+};
+
+const RenameStackPopup = ({ renameData, setRenameData, onUpdate, onClose }) => {
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div 
+      className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+    >
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 border border-gray-200">
+        <h2 className="text-2xl font-semibold mb-4">Rename Stack</h2>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={renameData.name}
+            onChange={(e) => setRenameData({...renameData, name: e.target.value})}
+            placeholder="Chat With PDF"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+        </div>
+        
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea
+            value={renameData.description}
+            onChange={(e) => setRenameData({...renameData, description: e.target.value})}
+            placeholder="Chat with your pdf notes"
+            rows="3"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+          />
+        </div>
+        
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="cursor-pointer px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onUpdate}
+            className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            disabled={!renameData.name.trim()}
+          >
+            Update
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -276,24 +337,60 @@ const Dashboard = () => {
 const StackCard = ({ stack, onEdit, onRename, onDelete }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const handleMenuToggle = (e) => {
+    e.stopPropagation();
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    onEdit(stack.name);
+  };
+
+  const handleRenameClick = (e) => {
+    e.stopPropagation();
+    onRename();
+    setIsMenuOpen(false);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    onDelete();
+    setIsMenuOpen(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setIsMenuOpen(false);
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  const createdDate = new Date(stack.createdAt).toLocaleDateString();
+
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow relative">
-      <div className="absolute top-4 right-4">
+    <div className="bg-white rounded-xl shadow-md p-4 md:p-6 hover:shadow-lg transition-shadow relative">
+      <div className="absolute top-3 right-3 md:top-4 md:right-4">
         <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          onClick={handleMenuToggle}
           className="p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
         >
           <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
           </svg>
-        </button>        
+        </button>
+        
         {isMenuOpen && (
           <div className="absolute right-0 top-8 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-32">
             <button
-              onClick={() => {
-                onRename();
-                setIsMenuOpen(false);
-              }}
+              onClick={handleRenameClick}
               className="cursor-pointer w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center space-x-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,11 +398,9 @@ const StackCard = ({ stack, onEdit, onRename, onDelete }) => {
               </svg>
               <span>Rename</span>
             </button>
+            
             <button
-              onClick={() => {
-                onDelete();
-                setIsMenuOpen(false);
-              }}
+              onClick={handleDeleteClick}
               className="cursor-pointer w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors flex items-center space-x-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,18 +411,24 @@ const StackCard = ({ stack, onEdit, onRename, onDelete }) => {
           </div>
         )}
       </div>
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-2 text-gray-800">
+
+      <div className="mb-4 md:mb-6">
+        <h3 className="text-lg md:text-xl font-semibold mb-2 text-gray-800 line-clamp-2">
           {stack.name}
         </h3>
-        <p className="text-gray-600 text-sm leading-relaxed">
-          {stack.description}
+        <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
+          {stack.description || "No description provided"}
         </p>
+        
+        <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+          <span>Created {createdDate}</span>
+        </div>
       </div>
+      
       <div className="flex justify-end">
         <button
-          onClick={() => onEdit(stack.name)}
-          className="flex items-center gap-2 text-gray-700 hover:text-gray-800 font-medium border border-gray-300 px-4 py-2 rounded-md hover:border-gray-400 hover:bg-gray-50 transition-all duration-200"
+          onClick={handleEditClick}
+          className="flex items-center gap-2 text-gray-700 hover:text-gray-800 font-medium border border-gray-300 px-3 py-2 rounded-md hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 text-sm"
         >
           Edit Stack
           <svg

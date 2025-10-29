@@ -22,15 +22,9 @@ const PremiumUpgrade = () => {
       return;
     }
 
-    const userWorkflows = JSON.parse(localStorage.getItem('userWorkflows') || '[]');
-    
     if (user.tier === 'premium') {
       alert('🎉 You are already a Premium member! Enjoy unlimited workflows.');
       return;
-    }
-    
-    if (userWorkflows.length < 3) {
-      alert(`🚀 You still have ${3 - userWorkflows.length} free workflows left! \nBut hey, why wait? Upgrade now and become a PRO!`);
     }
     
     setShowPaymentModal(true);
@@ -47,21 +41,6 @@ const PremiumUpgrade = () => {
     setPaymentStep('processing');
     
     setTimeout(() => {
-      // Open GitHub repo in new tab
-      window.open(GITHUB_REPO_URL, '_blank');
-      
-      setTimeout(() => {
-        setPaymentStep('success');
-        upgradeUserToPremium();
-      }, 2000);
-    }, 1500);
-  };
-
-  const handleUPIPayment = () => {
-    setPaymentStep('processing');
-    
-    setTimeout(() => {
-      // Open GitHub repo in new tab
       window.open(GITHUB_REPO_URL, '_blank');
       
       setTimeout(() => {
@@ -113,7 +92,7 @@ const PremiumUpgrade = () => {
 
   const buttonClass = user.tier === 'premium'
     ? "ml-4 px-4 py-2 bg-green-600 text-white rounded-full font-semibold cursor-default shadow-sm border border-green-700"
-    : "ml-4 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-sm hover:shadow cursor-pointer border border-purple-700";
+    : "ml-4 px-4 py-2 bg-blue-500 text-white rounded-full font-semibold hover:bg-blue-600 transition-all shadow-sm hover:shadow cursor-pointer";
 
   return (
     <>
@@ -295,7 +274,7 @@ const PremiumUpgrade = () => {
                     type="submit"
                     className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition-colors cursor-pointer shadow-sm mt-4"
                   >
-                    💳 Pay $29.00
+                    Pay $29.00
                   </button>
                 </form>
               </div>
@@ -314,7 +293,7 @@ const PremiumUpgrade = () => {
                   <h3 className="text-lg font-semibold text-gray-900">UPI Payment</h3>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 text-center">
-                  <div className="mb-4">
+                  <div className="mb-4 flex justify-center items-center">
                     <QRCodeSVG 
                       value={GITHUB_REPO_URL}
                       size={160}
@@ -322,24 +301,13 @@ const PremiumUpgrade = () => {
                   </div>
                   <div className="space-y-3 mb-4">
                     <div className="bg-white rounded-lg p-3 border border-gray-300">
-                      <p className="text-gray-600 text-sm">Project Repository</p>
-                      <p className="text-gray-900 font-mono text-sm truncate">github.com/adityarajsrv</p>
-                    </div>
-                    
-                    <div className="bg-white rounded-lg p-3 border border-gray-300">
                       <p className="text-gray-600 text-sm">Amount</p>
                       <p className="text-gray-900 font-semibold">$29.00</p>
                     </div>
                   </div>
                   <p className="text-gray-600 text-sm mb-4">
-                    Scan this QR code to view the project repository
+                    Scan this QR code to pay (Google Lens lol...)
                   </p>
-                  <button
-                    onClick={handleUPIPayment}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors cursor-pointer shadow-sm"
-                  >
-                    📱 Open Repository
-                  </button>
                 </div>
               </div>
             )}
