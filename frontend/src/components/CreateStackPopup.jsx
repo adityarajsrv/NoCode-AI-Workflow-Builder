@@ -4,42 +4,81 @@ import { useState } from 'react';
 const CreateStackPopup = ({ isOpen, onClose, onCreate }) => {
   const [stackName, setStackName] = useState('');
   const [stackDescription, setStackDescription] = useState('');
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!stackName.trim()) {
+      newErrors.stackName = 'Stack name is required';
+    } else if (stackName.trim().length < 2) {
+      newErrors.stackName = 'Stack name must be at least 2 characters';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleCreate = () => {
-    if (stackName.trim()) {
-      onCreate({
-        name: stackName,
-        description: stackDescription
-      });
-      setStackName('');
-      setStackDescription('');
+    if (!validateForm()) {
+      return;
     }
+
+    onCreate({
+      name: stackName.trim(),
+      description: stackDescription.trim()
+    });
+    setStackName('');
+    setStackDescription('');
+    setErrors({});
   };
 
   const handleCancel = () => {
     setStackName('');
     setStackDescription('');
+    setErrors({});
     onClose();
+  };
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      handleCancel();
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+    <div 
+      className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-white rounded-xl shadow-xl w-96 p-6 border border-gray-200">
-        <h2 className="text-2xl font-semibold mb-2">Create New Stack</h2>
+        <h2 className="text-2xl font-semibold mb-4">Create New Stack</h2>
+        
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Name
+            Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={stackName}
-            onChange={(e) => setStackName(e.target.value)}
+            onChange={(e) => {
+              setStackName(e.target.value);
+              if (errors.stackName) {
+                setErrors({...errors, stackName: ''});
+              }
+            }}
             placeholder="Chat With PDF"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+              errors.stackName ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {errors.stackName && (
+            <p className="text-red-500 text-xs mt-1">{errors.stackName}</p>
+          )}
         </div>
+        
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Description
@@ -52,6 +91,7 @@ const CreateStackPopup = ({ isOpen, onClose, onCreate }) => {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
           />
         </div>
+        
         <div className="flex justify-end space-x-3">
           <button
             onClick={handleCancel}
@@ -61,7 +101,8 @@ const CreateStackPopup = ({ isOpen, onClose, onCreate }) => {
           </button>
           <button
             onClick={handleCreate}
-            className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            disabled={!stackName.trim()}
           >
             Create
           </button>
