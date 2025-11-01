@@ -1,14 +1,15 @@
 /* eslint-disable react/prop-types */
-import { BookOpen, Settings, Trash2, Unlink, Upload } from 'lucide-react';
+import { BookOpen, Settings, Trash2, Unlink, Upload, Eye } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import axios from 'axios'; // import axios for backend requests
+import axios from 'axios'; 
 
 const KnowledgeBaseNode = ({ data, selected, id }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [fileInputRef, setFileInputRef] = useState(null);
+  const [showApiKey, setShowApiKey] = useState(false);
   const settingsRef = useRef(null);
 
   useEffect(() => {
@@ -58,7 +59,7 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
       const file = files[0];
       if (file.type === 'application/pdf' || file.type === 'text/plain') {
         setUploadedFile(file);
-        handleUploadToBackend(file); // upload to backend
+        handleUploadToBackend(file); 
         const reader = new FileReader();
         reader.onload = (event) => {
           console.log('File content:', event.target.result);
@@ -72,7 +73,7 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
     const file = e.target.files[0];
     if (file) {
       setUploadedFile(file);
-      handleUploadToBackend(file); // upload to backend
+      handleUploadToBackend(file); 
       const reader = new FileReader();
       reader.onload = (event) => console.log('File content:', event.target.result);
       reader.readAsText(file);
@@ -83,11 +84,12 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
   const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
   const handleDragLeave = (e) => { e.preventDefault(); setIsDragOver(false); };
   const handleUploadClick = () => { fileInputRef?.click(); };
+  const toggleApiKeyVisibility = () => setShowApiKey(!showApiKey);
 
   return (
     <div className={`shadow-lg rounded-lg bg-white  min-w-80 ${selected ? 'ring-2 ring-gray-300' : ''}`}>
       {showSettings && (
-        <div ref={settingsRef} className="absolute right-2 top-12 bg-white rounded-lg shadow-xl border border-gray-200 z-10 min-w-48">
+        <div ref={settingsRef} className="absolute right-2 top-12 bg-white rounded-lg shadow-xl z-10 min-w-48">
           <div className="p-1">
             <button
               onClick={handleResetConnections}
@@ -166,11 +168,20 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
-          <input 
-            type="password"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
-            placeholder="**********************"
-          />
+          <div className="relative">
+            <input 
+              type={showApiKey ? 'text' : 'password'}
+              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+              placeholder="Enter your Gemini API key"
+            />
+            <button
+              type="button"
+              onClick={toggleApiKeyVisibility}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+          </div>
         </div>       
       </div>
       <h3 className="flex justify-start text-sm ml-2 mt-2 pb-5">Query</h3>

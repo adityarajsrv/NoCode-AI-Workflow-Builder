@@ -428,7 +428,7 @@ const StackCard = ({ stack, onEdit, onRename, onDelete }) => {
       <div className="flex justify-end">
         <button
           onClick={handleEditClick}
-          className="flex items-center gap-2 text-gray-700 hover:text-gray-800 font-medium border border-gray-300 px-3 py-2 rounded-md hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 text-sm"
+          className="cursor-pointer flex items-center gap-2 text-gray-700 hover:text-gray-800 font-medium border border-gray-300 px-3 py-2 rounded-md hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 text-sm"
         >
           Edit Stack
           <svg
