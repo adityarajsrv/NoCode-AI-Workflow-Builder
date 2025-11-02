@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
-import { BookOpen, Settings, Trash2, Unlink, Upload, Eye } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { Handle, Position } from 'reactflow';
-import axios from 'axios'; 
+import { BookOpen, Settings, Trash2, Unlink, Upload, Eye } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Handle, Position } from "reactflow";
+import axios from "axios";
 
 const KnowledgeBaseNode = ({ data, selected, id }) => {
   const [showSettings, setShowSettings] = useState(false);
@@ -18,9 +18,9 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
         setShowSettings(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -37,17 +37,36 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
   const handleUploadToBackend = async (file) => {
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
-      const response = await axios.post('http://localhost:8000/api/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      console.log("Uploading file:", file.name, file.type);
 
-      console.log('Backend response:', response.data);
-      alert('File uploaded successfully!');
+      // Use the correct endpoint
+      const response = await axios.post(
+        "http://localhost:8000/api/documents/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      console.log("Backend response:", response.data);
+      alert("File uploaded and processed successfully!");
+
+      // Store the file ID for later use
+      if (response.data.file_id) {
+        console.log("File processed with ID:", response.data.file_id);
+      }
     } catch (err) {
-      console.error('Upload failed:', err);
-      alert('File upload failed. Check console for details.');
+      console.error("Upload failed:", err);
+      if (err.response) {
+        console.error("Response error:", err.response.data);
+        alert(`Upload failed: ${err.response.data.detail || "Unknown error"}`);
+      } else {
+        alert("Upload failed: Could not connect to server");
+      }
     }
   };
 
@@ -57,15 +76,15 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const file = files[0];
-      if (file.type === 'application/pdf' || file.type === 'text/plain') {
+      if (file.type === "application/pdf" || file.type === "text/plain") {
         setUploadedFile(file);
-        handleUploadToBackend(file); 
+        handleUploadToBackend(file);
         const reader = new FileReader();
         reader.onload = (event) => {
-          console.log('File content:', event.target.result);
+          console.log("File content:", event.target.result);
         };
         reader.readAsText(file);
-      } else alert('Please upload a PDF or text file only.');
+      } else alert("Please upload a PDF or text file only.");
     }
   };
 
@@ -73,23 +92,39 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
     const file = e.target.files[0];
     if (file) {
       setUploadedFile(file);
-      handleUploadToBackend(file); 
+      handleUploadToBackend(file);
       const reader = new FileReader();
-      reader.onload = (event) => console.log('File content:', event.target.result);
+      reader.onload = (event) =>
+        console.log("File content:", event.target.result);
       reader.readAsText(file);
-      e.target.value = '';
+      e.target.value = "";
     }
   };
 
-  const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
-  const handleDragLeave = (e) => { e.preventDefault(); setIsDragOver(false); };
-  const handleUploadClick = () => { fileInputRef?.click(); };
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+  const handleUploadClick = () => {
+    fileInputRef?.click();
+  };
   const toggleApiKeyVisibility = () => setShowApiKey(!showApiKey);
 
   return (
-    <div className={`shadow-lg rounded-lg bg-white  min-w-80 ${selected ? 'ring-2 ring-gray-300' : ''}`}>
+    <div
+      className={`shadow-lg rounded-lg bg-white  min-w-80 ${
+        selected ? "ring-2 ring-gray-300" : ""
+      }`}
+    >
       {showSettings && (
-        <div ref={settingsRef} className="absolute right-2 top-12 bg-white rounded-lg shadow-xl z-10 min-w-48">
+        <div
+          ref={settingsRef}
+          className="absolute right-2 top-12 bg-white rounded-lg shadow-xl z-10 min-w-48"
+        >
           <div className="p-1">
             <button
               onClick={handleResetConnections}
@@ -109,15 +144,23 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
           </div>
         </div>
       )}
-      <Handle type="target" position={Position.Left} className="w-3 h-3 p-0.75 mt-44 !bg-orange-600" />      
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="w-3 h-3 p-0.75 mt-44 !bg-orange-600"
+      />
       <div className="px-5 py-3 flex items-center justify-between gap-3 border-b-3 border-gray-200">
-        <div className='flex items-center justify-between gap-3'>
+        <div className="flex items-center justify-between gap-3">
           <BookOpen className="w-6 h-6 text-gray-600" />
-          <h2 className="font-semibold text-gray-800 text-lg">Knowledge Base</h2>
+          <h2 className="font-semibold text-gray-800 text-lg">
+            Knowledge Base
+          </h2>
         </div>
         <button
           className={`cursor-pointer w-8 h-8 flex items-center justify-center rounded-md transition-colors ${
-            showSettings ? 'bg-gray-100 text-blue-600' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+            showSettings
+              ? "bg-gray-100 text-blue-600"
+              : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
           }`}
           onClick={() => setShowSettings(!showSettings)}
         >
@@ -125,11 +168,15 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
         </button>
       </div>
       <div>
-        <div className="text-sm text-gray-600 bg-blue-100 px-5 py-2">Let LLM search info in your file</div>
+        <div className="text-sm text-gray-600 bg-blue-100 px-5 py-2">
+          Let LLM search info in your file
+        </div>
       </div>
       <div className="space-y-3 px-5 py-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">File for Knowledge Base</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            File for Knowledge Base
+          </label>
           <input
             type="file"
             ref={(ref) => setFileInputRef(ref)}
@@ -140,10 +187,10 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
           <div
             className={`w-full px-3 py-8 border-2 border-dashed rounded-md text-center text-sm cursor-pointer transition-colors ${
               isDragOver
-                ? 'border-green-500 bg-green-50'
+                ? "border-green-500 bg-green-50"
                 : uploadedFile
-                ? 'border-green-500 bg-green-50'
-                : 'border-green-300 hover:border-green-400'
+                ? "border-green-500 bg-green-50"
+                : "border-green-300 hover:border-green-400"
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -159,18 +206,23 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Embedding Model</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Embedding Model
+          </label>
           <select className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent">
+            <option>Gemini Embedding (text-embedding-004)</option>
             <option>text-embedding-3-large</option>
             <option>text-embedding-3-small</option>
             <option>text-embedding-ada-002</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            API Key
+          </label>
           <div className="relative">
-            <input 
-              type={showApiKey ? 'text' : 'password'}
+            <input
+              type={showApiKey ? "text" : "password"}
               className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
               placeholder="Enter your Gemini API key"
             />
@@ -182,11 +234,15 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
               <Eye className="w-4 h-4" />
             </button>
           </div>
-        </div>       
+        </div>
       </div>
       <h3 className="flex justify-start text-sm ml-2 mt-2 pb-5">Query</h3>
       <h3 className="flex justify-end text-sm mr-2 pb-5">Context</h3>
-      <Handle type="source" position={Position.Right} className="w-3 h-3 p-0.75 mt-54 !bg-orange-500" />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="w-3 h-3 p-0.75 mt-54 !bg-orange-500"
+      />
     </div>
   );
 };
