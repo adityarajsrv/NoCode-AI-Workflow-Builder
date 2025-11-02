@@ -5,42 +5,33 @@ from utils.logger import get_logger
 
 logger = get_logger("llm_engine")
 
-# Configure Gemini
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-
-def call_gemini(prompt: str, model: str = "gemini-2.5-flash", temperature: float = 0.7, max_tokens: int = 1024):
+def call_gemini(prompt: str, model: str = "gemini-2.5-flash", temperature: float = 0.7, max_tokens: int = 1024, api_key: str = None):
     """
-    Gemini call with official stable model names
+    Gemini call with API key support from request
     """
     logger.info(f"Calling Gemini LLM with model {model}, temperature {temperature}")
     
     try:
-        # Official Gemini model names (as of official docs)
+        # Use provided API key or environment key
+        effective_api_key = api_key or settings.GEMINI_API_KEY
+        if not effective_api_key:
+            raise ValueError("No Gemini API key provided")
+        
+        # Configure with the effective API key
+        genai.configure(api_key=effective_api_key)
+        
+        # Official Gemini model names
         supported_models = [
-            # Gemini 2.5 Series (Latest)
-            'gemini-2.5-pro',
-            'gemini-2.5-flash', 
-            'gemini-2.5-flash-lite',
-            
-            # Gemini 2.0 Series (Previous)
-            'gemini-2.0-flash',
-            'gemini-2.0-flash-lite',
-            
-            # Latest aliases (auto-updating)
-            'gemini-flash-latest',
-            'gemini-pro-latest',
-            
-            # Fallback models
-            'gemini-1.5-flash',
-            'gemini-1.5-pro'
+            'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite',
+            'gemini-2.0-flash', 'gemini-2.0-flash-lite',
+            'gemini-flash-latest', 'gemini-pro-latest',
+            'gemini-1.5-flash', 'gemini-1.5-pro'
         ]
         
         # Validate and use the requested model
         if model in supported_models:
             model_name = model
         else:
-            # Default to Gemini 2.5 Flash (best price-performance)
             model_name = "gemini-2.5-flash"
             logger.warning(f"Model {model} not recognized, using {model_name} instead")
         
@@ -88,7 +79,9 @@ def call_gemini(prompt: str, model: str = "gemini-2.5-flash", temperature: float
             return f"Error calling LLM: {str(e)}"
 
 def web_search(query: str, api_key: str = None):
-    """Web search function remains the same"""
+    """
+    Web search function - currently not used in workflow but kept for compatibility
+    """
     search_key = api_key or settings.SERPAPI_KEY
     if not search_key:
         logger.info("No SerpAPI key configured — skipping web search")

@@ -1,62 +1,56 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from core.workflow_runner import execute_workflow
-from utils.logger import get_logger
+from typing import Dict, Any
+import logging
+from ..core.workflow_runner import execute_workflow
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
-logger = get_logger("api.workflows")
 
-class RunRequest(BaseModel):
-    workflow: dict
+class WorkflowRequest(BaseModel):
+    workflow: Dict[str, Any]
     query: str
 
-class BuildRequest(BaseModel):
-    workflow: dict
+class WorkflowResponse(BaseModel):
+    success: bool
+    output: str
+    error: str = None
 
 @router.post("/build")
-def build_workflow(req: BuildRequest):
-    """
-    Validate and build workflow without executing
-    """
+async def build_workflow(workflow: Dict[str, Any]):
+    """Build workflow endpoint"""
     try:
-        from core.workflow_runner import WorkflowExecutor
-        
-        executor = WorkflowExecutor()
-        nodes = req.workflow.get("nodes", [])
-        edges = req.workflow.get("edges", [])
-        
-        # Validate workflow
-        executor.build_workflow(nodes, edges)
-        
-        return {
-            "status": "success", 
-            "message": "Workflow built successfully",
-            "node_count": len(nodes),
-            "edge_count": len(edges)
-        }
-        
+        logger.info("Workflow built successfully")
+        return {"success": True, "message": "Workflow built successfully"}
     except Exception as e:
-        logger.error(f"Workflow build failed: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Error building workflow: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/run")
-def run_workflow(req: RunRequest):
-    """
-    Execute workflow with user query
-    """
+@router.post("/run", response_model=WorkflowResponse)
+async def run_workflow(req: WorkflowRequest):
+    """Run workflow with query"""
     try:
         logger.info(f"Running workflow with query: {req.query}")
         
         result = execute_workflow(req.workflow, req.query)
         
-        return {
-            "status": "success",
-            "response": result,
-            "query": req.query
-        }
+        # Extract the final output
+        final_output = result.get('output', 'No output generated')
+        
+        logger.info("✅ Workflow executed successfully")
+        return WorkflowResponse(
+            success=True,
+            output=final_output
+        )
         
     except Exception as e:
-        logger.exception("Error running workflow")
+        logger.error(f"Error running workflow: {e}")
+        return WorkflowResponse(
+            success=False,
+            output="",
+            error=str(e)
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/validate/{workflow_id}")
