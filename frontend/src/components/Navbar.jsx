@@ -2,6 +2,7 @@ import logo from '../assets/logo.png';
 import { useState, useEffect, useRef } from "react";
 import LoginPopup from './LoginPopup';
 import PremiumUpgrade from './PremiumUpgrade';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const [isAuthPopupOpen, setIsAuthPopupOpen] = useState(false);
@@ -60,11 +61,12 @@ const Navbar = () => {
   return (
     <div>
       <div className="h-16 flex flex-row justify-between px-6 py-2 bg-white shadow-md">
-        <div className='flex flex-row space-x-3 items-center'>
-          <img src={logo} alt="" className='h-10 w-10'/>
-          <h1 className='font-semibold text-xl text-gray-900'>GenAI Stack</h1>
-        </div>
-        
+        <Link to="/">
+          <div className='flex flex-row space-x-3 items-center'>
+            <img src={logo} alt="" className='h-10 w-10'/>
+            <h1 className='font-semibold text-xl text-gray-900'>GenAI Stack</h1>
+          </div>
+        </Link>
         <div className="flex items-center space-x-4">
           {isLoggedIn && <PremiumUpgrade />}
           {isLoggedIn ? (

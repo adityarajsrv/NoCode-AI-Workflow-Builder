@@ -19,6 +19,7 @@ import KnowledgeBaseNode from "./nodes/KnowledgeBaseNode";
 import LLMNode from "./nodes/LLMNode";
 import OutputNode from "./nodes/OutputNode";
 import ChatPopup from "./ChatPopup";
+import axios from "axios";
 
 const nodeTypes = {
   userQuery: UserQueryNode,
@@ -97,6 +98,33 @@ const Workspace = () => {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
+  // Add this function to your Workspace.jsx
+  const handleBuildStack = async () => {
+    if (nodes.length === 0) {
+      alert("Please add nodes to build a workflow");
+      return;
+    }
+
+    try {
+      console.log("🏗️ Building workflow...");
+      const response = await axios.post(
+        "http://localhost:8000/api/workflows/build",
+        {
+          workflow: {
+            nodes: nodes,
+            edges: edges,
+          },
+        }
+      );
+
+      console.log("✅ Workflow built successfully:", response.data);
+      alert("Workflow built successfully! You can now chat with your stack.");
+    } catch (error) {
+      console.error("❌ Workflow build failed:", error);
+      alert(`Build failed: ${error.response?.data?.detail || "Unknown error"}`);
+    }
+  };
+
   return (
     <div className="w-full h-full bg-gray-50 relative" ref={reactFlowWrapper}>
       <ReactFlow
@@ -136,40 +164,45 @@ const Workspace = () => {
           </div>
         </div>
       )}
-      
+
       <div className="absolute bottom-18 right-5 flex items-center gap-2">
-        {hoveredIcon === 'build' && (
+        {hoveredIcon === "build" && (
           <div className="bg-white text-black px-2 py-2 rounded-md text-sm font-medium whitespace-nowrap shadow-lg">
             Build Stack
           </div>
         )}
-        <div 
+        <div
           className="bg-green-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow flex items-center justify-center"
-          onMouseEnter={() => setHoveredIcon('build')}
+          onClick={handleBuildStack}
+          onMouseEnter={() => setHoveredIcon("build")}
           onMouseLeave={() => setHoveredIcon(null)}
         >
           <Play className="w-5 h-5" />
         </div>
       </div>
       <div className="absolute bottom-4 right-5 flex items-center gap-2">
-        {hoveredIcon === 'chat' && (
+        {hoveredIcon === "chat" && (
           <div className="bg-white text-black px-2 py-2 rounded-md text-sm font-medium whitespace-nowrap shadow-lg">
             Chat with Stack
           </div>
         )}
-        <div 
+        <div
           className="bg-blue-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-shadow flex items-center justify-center"
           onClick={() => setIsChatOpen(true)}
-          onMouseEnter={() => setHoveredIcon('chat')}
+          onMouseEnter={() => setHoveredIcon("chat")}
           onMouseLeave={() => setHoveredIcon(null)}
         >
           <MessageCircleMore className="w-5 h-5" />
         </div>
       </div>
 
-      <ChatPopup 
-        isOpen={isChatOpen} 
-        onClose={() => setIsChatOpen(false)} 
+      <ChatPopup
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        workflow={{
+          nodes: nodes,
+          edges: edges,
+        }}
       />
 
       <style>{`

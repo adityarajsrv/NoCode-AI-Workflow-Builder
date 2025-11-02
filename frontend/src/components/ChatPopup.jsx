@@ -1,12 +1,10 @@
 /* eslint-disable react/prop-types */
 import { useState, useRef, useEffect } from "react";
-import {
-  X,
-  Send,
-} from "lucide-react";
+import { X, Send } from "lucide-react";
 import logo from "../assets/logo.png";
+import axios from "axios";
 
-const ChatPopup = ({ isOpen, onClose }) => {
+const ChatPopup = ({ isOpen, onClose, workflow }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isRunning, setIsRunning] = useState(false);
@@ -20,8 +18,8 @@ const ChatPopup = ({ isOpen, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (inputMessage.trim() === "") return;
+  const handleSendMessage = async () => {
+    if (inputMessage.trim() === "" || !workflow) return;
 
     const newMessage = {
       id: Date.now(),
@@ -36,19 +34,52 @@ const ChatPopup = ({ isOpen, onClose }) => {
     setMessages((prev) => [...prev, newMessage]);
     setInputMessage("");
     setIsRunning(true);
-    setTimeout(() => {
+
+    try {
+      console.log("🚀 Executing workflow with query:", inputMessage);
+      console.log("📋 Workflow nodes:", workflow.nodes?.length);
+      console.log("🔗 Workflow edges:", workflow.edges?.length);
+
+      // Call the workflow execution API
+      const response = await axios.post('http://localhost:8000/api/workflows/run', {
+        workflow: {
+          nodes: workflow.nodes || [],
+          edges: workflow.edges || []
+        },
+        query: inputMessage
+      });
+
+      console.log("✅ Workflow response received:", response.data);
+
       const aiResponse = {
         id: Date.now() + 1,
-        text: "This is a simulated response from your GenAI stack. In a real implementation, this would connect to your workflow.",
+        text: response.data.response || "No response received from workflow",
         sender: "ai",
         timestamp: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         }),
       };
+      
       setMessages((prev) => [...prev, aiResponse]);
+      
+    } catch (error) {
+      console.error("❌ Workflow execution failed:", error);
+      
+      const errorMessage = {
+        id: Date.now() + 1,
+        text: `Error: ${error.response?.data?.detail || 'Failed to execute workflow. Please check your configuration.'}`,
+        sender: "ai", 
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsRunning(false);
-    }, 2000);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -87,6 +118,11 @@ const ChatPopup = ({ isOpen, onClose }) => {
               <p className="text-gray-600 text-md ml-2">
                 Start a conversation to test your stack
               </p>
+              {!workflow && (
+                <p className="text-orange-500 text-sm mt-2">
+                  ⚠️ Please build a workflow first before chatting
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -135,7 +171,7 @@ const ChatPopup = ({ isOpen, onClose }) => {
                         ></div>
                       </div>
                       <span className="text-gray-600 text-sm">
-                        Processing...
+                        Executing workflow...
                       </span>
                     </div>
                   </div>
@@ -151,14 +187,15 @@ const ChatPopup = ({ isOpen, onClose }) => {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Send a message"
+              placeholder={!workflow ? "Build a workflow first to start chatting" : "Send a message"}
               className="w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
               rows="1"
               style={{ minHeight: "48px", maxHeight: "120px" }}
+              disabled={!workflow}
             />
             <button
               onClick={handleSendMessage}
-              disabled={isRunning || inputMessage.trim() === ""}
+              disabled={isRunning || inputMessage.trim() === "" || !workflow}
               className="cursor-pointer absolute right-2 bottom-2 bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 mb-1.5 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             >
               {isRunning ? (
@@ -168,6 +205,11 @@ const ChatPopup = ({ isOpen, onClose }) => {
               )}
             </button>
           </div>
+          {!workflow && (
+            <p className="text-orange-500 text-xs mt-2 text-center">
+              ⚠️ Drag and connect nodes on the canvas, then click &quote;Build Stack&quote; before chatting
+            </p>
+          )}
         </div>
       </div>
     </div>
