@@ -1,68 +1,50 @@
 import chromadb
-from sentence_transformers import SentenceTransformer
-import logging
+from utils.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("vectorstore")
 
-# Initialize persistent client with increased timeout
-client = chromadb.PersistentClient(
-    path="./chroma_db",
-    settings=chromadb.Settings(
-        chroma_server_http_timeout=300,
-        allow_reset=True
-    )
-)
-
-# Initialize local embedding model
-embedding_model = None
-
-def get_embedding_model():
-    global embedding_model
-    if embedding_model is None:
-        logger.info("🚀 Loading local embedding model: all-MiniLM-L6-v2")
-        embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        logger.info("✅ Local embedding model loaded successfully!")
-    return embedding_model
-
-def get_embeddings(texts):
-    """Generate embeddings using local model"""
-    model = get_embedding_model()
-    if isinstance(texts, str):
-        texts = [texts]
-    embeddings = model.encode(texts).tolist()
-    return embeddings
-
-# Create collection with custom embedding function
+# Initialize persistent client with simple configuration
 try:
-    collection = client.get_collection("documents")
+    client = chromadb.PersistentClient(path="./chroma_db")
+    logger.info("✅ ChromaDB client initialized successfully")
 except Exception as e:
-    logger.info("Creating new collection 'documents'")
-    collection = client.create_collection(
-        name="documents",
-        embedding_function=get_embeddings
-    )
+    logger.error(f"❌ Failed to initialize ChromaDB: {e}")
+    raise e
 
-def add_documents(documents, metadatas=None, ids=None):
-    """Add documents to the vector store"""
+# Create or get collection
+try:
+    collection = client.get_or_create_collection(name="documents")
+    logger.info("✅ ChromaDB collection 'documents' ready")
+except Exception as e:
+    logger.error(f"❌ Failed to get/create collection: {e}")
+    raise e
+
+def add_document_chunks(doc_id: str, chunks: list[str], embeddings: list[list[float]], metas: list[dict] = None):
+    """Add document chunks to ChromaDB"""
     try:
-        if ids is None:
-            ids = [f"doc_{i}" for i in range(len(documents))]
+        ids = [f"{doc_id}-{i}" for i in range(len(chunks))]
+        metas = metas or [{} for _ in chunks]
+        
+        logger.info(f"🔄 Adding {len(chunks)} chunks to ChromaDB for doc {doc_id}")
         
         collection.add(
-            documents=documents,
-            metadatas=metadatas,
-            ids=ids
+            ids=ids,
+            documents=chunks,
+            embeddings=embeddings,
+            metadatas=metas
         )
-        logger.info(f"✅ Added {len(documents)} documents to vector store")
+        
+        logger.info(f"✅ Successfully added {len(chunks)} chunks to ChromaDB")
         return True
+        
     except Exception as e:
-        logger.error(f"❌ Error adding documents: {e}")
+        logger.error(f"❌ Error adding documents to ChromaDB: {e}")
         return False
 
-def query_similar(query_text, n_results=3):
-    """Query similar documents from vector store"""
+def query_similar(query_text: str, n_results: int = 3):
+    """Query similar documents from ChromaDB"""
     try:
-        logger.info(f"🔍 Querying Chroma for: {query_text}")
+        logger.info(f"🔍 Querying ChromaDB for: {query_text}")
         
         results = collection.query(
             query_texts=[query_text],
@@ -70,23 +52,32 @@ def query_similar(query_text, n_results=3):
             include=["documents", "metadatas", "distances"]
         )
         
-        logger.info(f"✅ Found {len(results['documents'][0])} similar documents")
-        return results
+        # Format the results
+        formatted_results = []
+        if results["documents"] and results["documents"][0]:
+            for i in range(len(results["documents"][0])):
+                formatted_results.append({
+                    "id": results["ids"][0][i] if results["ids"] else f"doc-{i}",
+                    "text": results["documents"][0][i],
+                    "meta": results["metadatas"][0][i] if results["metadatas"] else {},
+                    "distance": results["distances"][0][i] if results["distances"] else 0.0
+                })
+        
+        logger.info(f"✅ Found {len(formatted_results)} similar documents")
+        return formatted_results
+        
     except Exception as e:
-        logger.error(f"❌ Error querying vector store: {e}")
-        return {"documents": [[]], "metadatas": [[]], "distances": [[]]}
+        logger.error(f"❌ Error querying ChromaDB: {e}")
+        return []
 
-def reset_vector_store():
-    """Reset the vector store"""
+def reset_collection():
+    """Reset the collection (for testing)"""
     try:
-        client.delete_collection("documents")
+        client.delete_collection(name="documents")
         global collection
-        collection = client.create_collection(
-            name="documents",
-            embedding_function=get_embeddings
-        )
-        logger.info("✅ Vector store reset successfully")
+        collection = client.create_collection(name="documents")
+        logger.info("✅ ChromaDB collection reset successfully")
         return True
     except Exception as e:
-        logger.error(f"❌ Error resetting vector store: {e}")
+        logger.error(f"❌ Error resetting collection: {e}")
         return False
