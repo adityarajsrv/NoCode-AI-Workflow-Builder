@@ -6,7 +6,7 @@ import ReactFlow, {
   addEdge,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Grip,
   MessageCircleMore,
@@ -36,6 +36,7 @@ const Workspace = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [hoveredIcon, setHoveredIcon] = useState(null);
+  const [nodeResults, setNodeResults] = useState({}); // Store node execution results
   const reactFlowWrapper = useRef(null);
 
   const handleDeleteNode = useCallback(
@@ -44,6 +45,12 @@ const Workspace = () => {
       setEdges((eds) =>
         eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
       );
+      // Remove results for deleted node
+      setNodeResults((prev) => {
+        const newResults = { ...prev };
+        delete newResults[nodeId];
+        return newResults;
+      });
     },
     [setNodes, setEdges]
   );
@@ -85,12 +92,20 @@ const Workspace = () => {
           label: `${type} Node`,
           onDelete: handleDeleteNode,
           onResetConnections: handleResetConnections,
+          // Pass node results and update function
+          nodeResults: nodeResults,
+          onNodeResultUpdate: (nodeId, result) => {
+            setNodeResults((prev) => ({
+              ...prev,
+              [nodeId]: result,
+            }));
+          },
         },
       };
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [setNodes, handleDeleteNode, handleResetConnections]
+    [setNodes, handleDeleteNode, handleResetConnections, nodeResults]
   );
 
   const onDragOver = useCallback((event) => {
@@ -98,7 +113,8 @@ const Workspace = () => {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  // Add this function to your Workspace.jsx
+  // Enhanced build function to test workflow and show results
+  // Enhanced build function to test workflow and show results
   const handleBuildStack = async () => {
     if (nodes.length === 0) {
       alert("Please add nodes to build a workflow");
@@ -106,8 +122,18 @@ const Workspace = () => {
     }
 
     try {
-      console.log("🏗️ Building workflow...");
-      const response = await axios.post(
+      console.log("🏗️ Building and testing workflow...");
+
+      // Find user query node to get test query
+      const userQueryNode = nodes.find((node) => node.type === "userQuery");
+      let testQuery = "What is machine learning?"; // Default test query
+
+      if (userQueryNode && nodeResults[userQueryNode.id]?.data) {
+        testQuery = nodeResults[userQueryNode.id].data;
+      }
+
+      // Build workflow first
+      const buildResponse = await axios.post(
         "http://localhost:8000/api/workflows/build",
         {
           workflow: {
@@ -117,13 +143,69 @@ const Workspace = () => {
         }
       );
 
-      console.log("✅ Workflow built successfully:", response.data);
-      alert("Workflow built successfully! You can now chat with your stack.");
+      console.log("✅ Workflow built successfully:", buildResponse.data);
+
+      // Now test the workflow with a query to get node results
+      const runResponse = await axios.post(
+        "http://localhost:8000/api/workflows/run",
+        {
+          workflow: {
+            nodes: nodes,
+            edges: edges,
+          },
+          query: testQuery,
+        }
+      );
+
+      console.log("✅ Workflow test results:", runResponse.data);
+
+      // Update node results with the execution data
+      if (runResponse.data.node_results) {
+        setNodeResults(runResponse.data.node_results);
+
+        // Also update nodes data to pass results to individual nodes
+        setNodes((nds) =>
+          nds.map((node) => ({
+            ...node,
+            data: {
+              ...node.data,
+              nodeResults: runResponse.data.node_results,
+              onNodeResultUpdate: (nodeId, result) => {
+                setNodeResults((prev) => ({
+                  ...prev,
+                  [nodeId]: result,
+                }));
+              },
+            },
+          }))
+        );
+      }
+
+      alert("Workflow built and tested successfully! Check the node outputs.");
     } catch (error) {
-      console.error("❌ Workflow build failed:", error);
-      alert(`Build failed: ${error.response?.data?.detail || "Unknown error"}`);
+      console.error("❌ Workflow build/test failed:", error);
+      alert(`Build failed: ${error.response?.data?.detail || error.message}`);
     }
   };
+
+  // Update nodes when nodeResults change to pass data to individual nodes
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          nodeResults: nodeResults,
+          onNodeResultUpdate: (nodeId, result) => {
+            setNodeResults((prev) => ({
+              ...prev,
+              [nodeId]: result,
+            }));
+          },
+        },
+      }))
+    );
+  }, [nodeResults]);
 
   return (
     <div className="w-full h-full bg-gray-50 relative" ref={reactFlowWrapper}>
@@ -143,6 +225,8 @@ const Workspace = () => {
         </div>
         <Background variant="dots" gap={12} size={1} />
       </ReactFlow>
+
+      {/* Rest of your existing UI remains the same */}
       {nodes.length === 0 && (
         <div
           className="absolute inset-0 flex flex-col justify-center items-center gap-4 pointer-events-none"
@@ -168,7 +252,7 @@ const Workspace = () => {
       <div className="absolute bottom-18 right-5 flex items-center gap-2">
         {hoveredIcon === "build" && (
           <div className="bg-white text-black px-2 py-2 rounded-md text-sm font-medium whitespace-nowrap shadow-lg">
-            Build Stack
+            Build & Test Stack
           </div>
         )}
         <div

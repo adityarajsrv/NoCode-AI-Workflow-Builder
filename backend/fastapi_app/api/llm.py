@@ -60,3 +60,4 @@ def chat_with_llm(req: LLMRequest):
     except Exception as e:
         logger.error(f"LLM API error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"LLM processing failed: {str(e)}")
+    

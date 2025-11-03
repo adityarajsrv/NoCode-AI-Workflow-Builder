@@ -19,11 +19,20 @@ const OutputNode = ({ data, selected, id }) => {
   }, []);
 
   useEffect(() => {
-    if (data.output) setOutputText(data.output);
-  }, [data.output]);
+    // Get result for this node
+    const nodeResult = data.nodeResults ? data.nodeResults[id] : null;
+    if (nodeResult && nodeResult.data) {
+      setOutputText(nodeResult.data);
+    } else if (data.output) {
+      setOutputText(data.output);
+    }
+  }, [data.nodeResults, id, data.output]);
 
   const handleDeleteNode = () => { if (data.onDelete) data.onDelete(id); setShowSettings(false); };
   const handleResetConnections = () => { if (data.onResetConnections) data.onResetConnections(id); setShowSettings(false); };
+
+  // Get result for this node
+  // const nodeResult = data.nodeResults ? data.nodeResults[id] : null;
 
   return (
     <div className={`shadow-lg rounded-lg bg-white min-w-80 ${selected ? 'ring-2 ring-gray-300' : ''}`}>
@@ -70,7 +79,9 @@ const OutputNode = ({ data, selected, id }) => {
           <Settings className="w-5 h-5" />
         </button>
       </div>
-      <div className="px-5 py-2 text-sm flex flex-starit text-gray-600 bg-blue-100">Output of the result nodes as text</div>
+      <div className="px-5 py-2 text-sm flex flex-starit text-gray-600 bg-blue-100">
+        Output of the result nodes as text
+      </div>
       <div className="space-y-3">
         <div className='px-3 py-2'>
           <label className="ml-1 py-1 text-sm flex flex-start font-medium text-gray-700 mb-1">Output Text</label>

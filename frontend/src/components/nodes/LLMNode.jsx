@@ -122,6 +122,7 @@ USER QUERY: {query}`;
 
   const toggleApiKeyVisibility = () => setShowApiKey(!showApiKey);
   const toggleSerpKeyVisibility = () => setShowSerpKey(!showSerpKey);
+  // const nodeResult = data.nodeResults ? data.nodeResults[id] : null;
 
   return (
     <div

@@ -2,6 +2,7 @@ from utils.logger import get_logger
 from core.vectorstore import query_similar
 from core.llm_engine import call_gemini
 from typing import Dict, Any, List
+import datetime
 
 logger = get_logger("workflow_runner")
 
@@ -9,6 +10,7 @@ class WorkflowExecutor:
     def __init__(self):
         self.nodes = []
         self.connections = []
+        self.node_results = {}  # Track results for each node
     
     def build_workflow(self, nodes: List[Dict], edges: List[Dict]):
         """Build and validate workflow structure"""
@@ -27,9 +29,14 @@ class WorkflowExecutor:
         logger.info(f"✅ Workflow built with {len(nodes)} nodes and {len(edges)} connections")
         return True
     
-    def execute_workflow(self, query: str) -> str:
-        """Execute the workflow with the given query"""
+    def execute_workflow(self, query: str) -> Dict[str, Any]:
+        """Execute the workflow with the given query and return results with node outputs"""
         logger.info(f"🚀 Starting workflow execution with query: {query}")
+        logger.info(f"📋 Available nodes: {[node.get('type') for node in self.nodes]}")
+        logger.info(f"🔗 Available connections: {len(self.connections)}")
+        
+        # Reset node results for new execution
+        self.node_results = {}
         
         # Find start node (User Query)
         user_query_node = next((node for node in self.nodes if node.get("type") == "userQuery"), None)
@@ -49,14 +56,48 @@ class WorkflowExecutor:
             if not current_node:
                 break
                 
-            # Process current node
+            # Process current node and store result
             current_data = self._process_node(current_node, current_data)
+            
+            # Store node result for frontend display
+            self._store_node_result(current_node, current_data)
             
             # Find next node
             next_node_id = self._get_next_node(current_node_id)
             current_node_id = next_node_id
         
-        return current_data.get("output", "No output generated")
+        final_output = current_data.get("output", "No output generated")
+        
+        logger.info(f"🎉 Workflow execution completed successfully")
+        
+        return {
+            "final_output": final_output,
+            "node_results": self.node_results
+        }
+    
+    def _store_node_result(self, node: Dict, data: Dict):
+        """Store the result of node processing for frontend display"""
+        node_id = node["id"]
+        node_type = node.get("type")
+        
+        result_data = {
+            "type": node_type,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+        
+        if node_type == "userQuery":
+            result_data["data"] = data.get("query", "")
+        elif node_type == "knowledgeBase":
+            result_data["data"] = data.get("context", "")
+        elif node_type == "llm":
+            result_data["data"] = data.get("output", "")
+        elif node_type == "output":
+            result_data["data"] = data.get("output", "")
+        else:
+            result_data["data"] = data.get("output", data.get("query", ""))
+        
+        self.node_results[node_id] = result_data
+        logger.debug(f"📊 Stored result for node {node_id} ({node_type}): {len(str(result_data['data']))} chars")
     
     def _process_node(self, node: Dict, data: Dict) -> Dict:
         node_type = node.get("type")
@@ -126,10 +167,11 @@ Please provide a helpful answer based on the context above. If the context doesn
                 }
             except Exception as e:
                 logger.error(f"❌ LLM call failed: {str(e)}")
+                error_response = f"Error calling LLM: {str(e)}"
                 return {
                     "query": query,
                     "context": context,
-                    "output": f"Error calling LLM: {str(e)}"
+                    "output": error_response
                 }
             
         elif node_type == "output":
@@ -147,9 +189,9 @@ Please provide a helpful answer based on the context above. If the context doesn
                 return connection.get("target")
         return None
 
-def execute_workflow(workflow: dict, query: str):
+def execute_workflow(workflow: dict, query: str) -> Dict[str, Any]:
     """
-    Main workflow execution function
+    Main workflow execution function - returns both final output and node results
     """
     try:
         executor = WorkflowExecutor()
@@ -163,10 +205,9 @@ def execute_workflow(workflow: dict, query: str):
         # Build workflow
         executor.build_workflow(nodes, edges)
         
-        # Execute workflow
+        # Execute workflow and get results
         result = executor.execute_workflow(query)
         
-        logger.info(f"🎉 Workflow execution completed successfully")
         return result
         
     except Exception as e:

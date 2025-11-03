@@ -1,15 +1,14 @@
 /* eslint-disable react/prop-types */
-import { BookOpen, Settings, Trash2, Unlink, Upload,  } from "lucide-react";
+import axios from "axios";
+import { BookOpen, Settings, Trash2, Unlink, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Handle, Position } from "reactflow";
-import axios from "axios";
 
 const KnowledgeBaseNode = ({ data, selected, id }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [fileInputRef, setFileInputRef] = useState(null);
-  // const [showApiKey, setShowApiKey] = useState(false);
   const settingsRef = useRef(null);
 
   useEffect(() => {
@@ -34,6 +33,9 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
     setShowSettings(false);
   };
 
+  // Get result for this node
+  // const nodeResult = data.nodeResults ? data.nodeResults[id] : null;
+
   const handleUploadToBackend = async (file) => {
     try {
       const formData = new FormData();
@@ -41,7 +43,6 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
 
       console.log("Uploading file:", file.name, file.type);
 
-      // Use the correct endpoint
       const response = await axios.post(
         "http://localhost:8000/api/documents/upload",
         formData,
@@ -55,7 +56,6 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
       console.log("Backend response:", response.data);
       alert("File uploaded and processed successfully!");
 
-      // Store the file ID for later use
       if (response.data.file_id) {
         console.log("File processed with ID:", response.data.file_id);
       }
@@ -84,7 +84,9 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
           console.log("File content:", event.target.result);
         };
         reader.readAsText(file);
-      } else alert("Please upload a PDF or text file only.");
+      } else {
+        alert("Please upload a PDF or text file only.");
+      }
     }
   };
 
@@ -105,18 +107,19 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
     e.preventDefault();
     setIsDragOver(true);
   };
+
   const handleDragLeave = (e) => {
     e.preventDefault();
     setIsDragOver(false);
   };
+
   const handleUploadClick = () => {
     fileInputRef?.click();
   };
-  // const toggleApiKeyVisibility = () => setShowApiKey(!showApiKey);
 
   return (
     <div
-      className={`shadow-lg rounded-lg bg-white  min-w-80 ${
+      className={`shadow-lg rounded-lg bg-white min-w-80 ${
         selected ? "ring-2 ring-gray-300" : ""
       }`}
     >
@@ -192,10 +195,10 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
                 ? "border-green-500 bg-green-50"
                 : "border-green-300 hover:border-green-400"
             }`}
+            onClick={handleUploadClick}
+            onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={handleUploadClick}
           >
             <Upload className="mx-auto h-5 w-5 text-green-400 mb-2" />
             {uploadedFile ? (

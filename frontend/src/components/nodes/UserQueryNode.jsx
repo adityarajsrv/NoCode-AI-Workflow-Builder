@@ -21,8 +21,16 @@ const UserQueryNode = ({ data, selected, id }) => {
   const handleDeleteNode = () => { if (data.onDelete) data.onDelete(id); setShowSettings(false); };
   const handleResetConnections = () => { if (data.onResetConnections) data.onResetConnections(id); setShowSettings(false); };
 
-  const handleQuerySubmit = () => {
-    if (data.onOutput) data.onOutput(query);
+  // Update query and notify parent
+  const handleQueryChange = (newQuery) => {
+    setQuery(newQuery);
+    if (data.onNodeResultUpdate) {
+      data.onNodeResultUpdate(id, {
+        type: 'userQuery',
+        data: newQuery,
+        timestamp: new Date().toISOString()
+      });
+    }
   };
 
   return (
@@ -64,14 +72,14 @@ const UserQueryNode = ({ data, selected, id }) => {
         <label className="block text-sm font-medium text-gray-700 mb-1">Enter your query</label>
         <textarea
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => handleQueryChange(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm min-h-[80px] max-h-[120px] overflow-y-auto focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
           placeholder="Ask a question to start the workflow..."
         />
       </div>
 
       <h3 className="flex justify-end text-sm mr-2 pb-5">Query Output</h3>
-      <Handle type="source" position={Position.Right} onClick={handleQuerySubmit} className="w-3 h-3 mt-28 p-0.75 !bg-purple-700" />
+      <Handle type="source" position={Position.Right} className="w-3 h-3 mt-28 p-0.75 !bg-purple-700" />
     </div>
   );
 };
