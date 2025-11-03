@@ -18,6 +18,21 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
     scrollToBottom();
   }, [messages]);
 
+  // Load conversation history from localStorage on component mount
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('chatConversationHistory');
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    }
+  }, []);
+
+  // Save conversation history to localStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('chatConversationHistory', JSON.stringify(messages));
+    }
+  }, [messages]);
+
   const handleSendMessage = async () => {
     if (inputMessage.trim() === "" || !workflow) return;
 
@@ -51,9 +66,14 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
 
       console.log("✅ Workflow response received:", response.data);
 
+      // FIX: Use final_output instead of response
+      const aiResponseText = response.data.final_output || 
+                            response.data.response || 
+                            "No response received from workflow";
+
       const aiResponse = {
         id: Date.now() + 1,
-        text: response.data.response || "No response received from workflow",
+        text: aiResponseText,
         sender: "ai",
         timestamp: new Date().toLocaleTimeString([], {
           hour: "2-digit",
@@ -68,7 +88,7 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
       
       const errorMessage = {
         id: Date.now() + 1,
-        text: `Error: ${error.response?.data?.detail || 'Failed to execute workflow. Please check your configuration.'}`,
+        text: `Error: ${error.response?.data?.detail || error.response?.data?.message || 'Failed to execute workflow. Please check your configuration.'}`,
         sender: "ai", 
         timestamp: new Date().toLocaleTimeString([], {
           hour: "2-digit",
@@ -89,6 +109,11 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
     }
   };
 
+  const clearChatHistory = () => {
+    setMessages([]);
+    localStorage.removeItem('chatConversationHistory');
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -101,12 +126,22 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
               <h1 className="font-semibold text-xl mt-2">GenAI Stack</h1>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-          >
-            <X className="cursor-pointer w-5 h-5 text-gray-600" />
-          </button>
+          <div className="flex items-center gap-2">
+            {messages.length > 0 && (
+              <button
+                onClick={clearChatHistory}
+                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                Clear Chat
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+            >
+              <X className="cursor-pointer w-5 h-5 text-gray-600" />
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
           {messages.length === 0 ? (
@@ -207,7 +242,7 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
           </div>
           {!workflow && (
             <p className="text-orange-500 text-xs mt-2 text-center">
-              ⚠️ Drag and connect nodes on the canvas, then click &quote;Build Stack&quote; before chatting
+              ⚠️ Drag and connect nodes on the canvas, then click &apos;Build Stack&apos; before chatting
             </p>
           )}
         </div>

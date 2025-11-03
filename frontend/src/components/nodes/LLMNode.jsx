@@ -79,8 +79,8 @@ USER QUERY: {query}`;
         temperature: temperature,
         api_key: apiKey,
         model: model,
-        use_websearch: useWebSearch,
-        serp_api_key: serpApiKey,
+        use_websearch: useWebSearch, // This enables web search
+        serp_api_key: serpApiKey, // This provides the API key
       });
 
       const output = res.data.reply || "No response received";
@@ -94,7 +94,7 @@ USER QUERY: {query}`;
       }
     }
   };
-
+  
   const modelOptions = [
     { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro (Most Advanced)" },
     {

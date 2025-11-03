@@ -40,15 +40,24 @@ def build_workflow(req: BuildRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/run")
-async def run_workflow(req: RunRequest):
+async def run_workflow(request: dict):
     """
     Run workflow and return both final output and node results
     """
     try:
-        logger.info(f"🚀 Running workflow with query: {req.query}")
+        # Extract data from request body
+        workflow_data = request.get("workflow", {})
+        query = request.get("query", "")
         
-        # Execute workflow using the request model
-        result = execute_workflow(req.workflow, req.query)
+        if not workflow_data:
+            raise HTTPException(status_code=400, detail="Workflow data is required")
+        if not query:
+            raise HTTPException(status_code=400, detail="Query is required")
+        
+        logger.info(f"🚀 Running workflow with query: {query}")
+        
+        # Execute workflow
+        result = execute_workflow(workflow_data, query)
         
         return {
             "success": True,

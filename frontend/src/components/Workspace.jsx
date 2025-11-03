@@ -38,6 +38,7 @@ const Workspace = () => {
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const [nodeResults, setNodeResults] = useState({}); // Store node execution results
   const reactFlowWrapper = useRef(null);
+  const [conversationHistory, setConversationHistory] = useState([]);
 
   const handleDeleteNode = useCallback(
     (nodeId) => {
@@ -114,7 +115,6 @@ const Workspace = () => {
   }, []);
 
   // Enhanced build function to test workflow and show results
-  // Enhanced build function to test workflow and show results
   const handleBuildStack = async () => {
     if (nodes.length === 0) {
       alert("Please add nodes to build a workflow");
@@ -163,6 +163,17 @@ const Workspace = () => {
       if (runResponse.data.node_results) {
         setNodeResults(runResponse.data.node_results);
 
+        // Update conversation history
+        const newConversation = {
+          query: testQuery,
+          response: runResponse.data.final_output,
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
+        setConversationHistory((prev) => [...prev, newConversation]);
+
         // Also update nodes data to pass results to individual nodes
         setNodes((nds) =>
           nds.map((node) => ({
@@ -170,6 +181,7 @@ const Workspace = () => {
             data: {
               ...node.data,
               nodeResults: runResponse.data.node_results,
+              conversationHistory: conversationHistory, // Pass conversation history
               onNodeResultUpdate: (nodeId, result) => {
                 setNodeResults((prev) => ({
                   ...prev,
@@ -188,7 +200,7 @@ const Workspace = () => {
     }
   };
 
-  // Update nodes when nodeResults change to pass data to individual nodes
+  // Update the useEffect to include conversation history
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
@@ -196,6 +208,7 @@ const Workspace = () => {
         data: {
           ...node.data,
           nodeResults: nodeResults,
+          conversationHistory: conversationHistory,
           onNodeResultUpdate: (nodeId, result) => {
             setNodeResults((prev) => ({
               ...prev,
@@ -205,7 +218,7 @@ const Workspace = () => {
         },
       }))
     );
-  }, [nodeResults]);
+  }, [nodeResults, conversationHistory]);
 
   return (
     <div className="w-full h-full bg-gray-50 relative" ref={reactFlowWrapper}>
