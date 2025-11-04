@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import CreateStackPopup from "../components/CreateStackPopup";
 import Navbar from "../components/Navbar";
 import { stackAPI } from "../../../backend/auth/utils/api";
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const Dashboard = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -46,7 +48,7 @@ const Dashboard = () => {
 
   const handleCreateStack = async (stackData) => {
     if (!isLoggedIn) {
-      alert("Please login to create stacks!");
+      toast.error("Please login to create stacks!");
       return;
     }
 
@@ -54,14 +56,15 @@ const Dashboard = () => {
       const newStack = await stackAPI.createStack(stackData);
       setStacks(prev => [...prev, newStack]);
       setIsPopupOpen(false);
+      toast.success("Stack created successfully!");
     } catch (err) {
-      alert(err.message || 'Failed to create stack');
+      toast.error(err.message || 'Failed to create stack');
     }
   };
 
   const handleEditStack = (stackName) => {
     if (!isLoggedIn) {
-      alert("Please login to edit stacks!");
+      toast.error("Please login to edit stacks!");
       return;
     }
     navigate(`/workflow-builder/${encodeURIComponent(stackName)}`);
@@ -78,7 +81,7 @@ const Dashboard = () => {
 
   const handleUpdateStack = async () => {
     if (!renameData.name.trim()) {
-      alert("Stack name is required!");
+      toast.error("Stack name is required!");
       return;
     }
 
@@ -90,30 +93,34 @@ const Dashboard = () => {
       setIsRenamePopupOpen(false);
       setEditingStack(null);
       setRenameData({ name: '', description: '' });
+      toast.success("Stack updated successfully!");
     } catch (err) {
-      alert(err.message || 'Failed to update stack');
+      toast.error(err.message || 'Failed to update stack');
     }
   };
 
   const handleDeleteStack = async (stackId) => {
-    if (window.confirm("Are you sure you want to delete this stack? This action cannot be undone.")) {
+    const confirmDelete = window.confirm("Are you sure you want to delete this stack? This action cannot be undone.");
+    
+    if (confirmDelete) {
       try {
         await stackAPI.deleteStack(stackId);
         setStacks(prev => prev.filter(stack => stack._id !== stackId));
+        toast.success("Stack deleted successfully!");
       } catch (err) {
-        alert(err.message || 'Failed to delete stack');
+        toast.error(err.message || 'Failed to delete stack');
       }
     }
   };
 
   const handleCreateButtonClick = () => {
     if (!isLoggedIn) {
-      alert("Please login to create stacks!");
+      toast.error("Please login to create stacks!");
       return;
     }
     
     if (!canCreateMoreStacks) {
-      alert("🚫 Free tier limited to 3 stacks. Upgrade to Premium!");
+      toast.warning("🚫 Free tier limited to 3 stacks. Upgrade to Premium!");
       return;
     }
     setIsPopupOpen(true);
@@ -237,15 +244,6 @@ const Dashboard = () => {
               <p className="text-yellow-700 mb-4 text-sm md:text-base">
                 You&apos;ve reached the free tier limit of 3 stacks. Upgrade to Premium for unlimited creations!
               </p>
-              <button
-                onClick={() => {
-                  const premiumButton = document.querySelector('[class*="bg-gradient-to-r from-purple-600"]');
-                  if (premiumButton) premiumButton.click();
-                }}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all cursor-pointer text-sm md:text-base"
-              >
-                Upgrade to Premium
-              </button>
             </div>
           )}
         </div>

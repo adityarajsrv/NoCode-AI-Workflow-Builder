@@ -1,8 +1,10 @@
+/* eslint-disable react/prop-types */
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { toast } from "react-toastify";
 
-const PremiumUpgrade = () => {
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) => {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [paymentStep, setPaymentStep] = useState("method");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [formData, setFormData] = useState({
@@ -12,33 +14,130 @@ const PremiumUpgrade = () => {
     name: "",
     upiId: "",
   });
+  const [formErrors, setFormErrors] = useState({
+    cardNumber: "",
+    expiry: "",
+    cvv: "",
+    name: "",
+    upiId: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const GITHUB_REPO_URL =
     "https://github.com/adityarajsrv/NoCode-AI-Workflow-Builder";
 
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const handleClose = externalOnClose || (() => setInternalIsOpen(false));
+
   const handleUpgradeClick = () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (!user.email && !user.username) {
-      alert("Please login to upgrade to premium!");
+      toast.error("Please login to upgrade to premium!");
       return;
     }
 
     if (user.tier === "premium") {
-      alert("🎉 You are already a Premium member! Enjoy unlimited workflows.");
+      toast.success("🎉 You are already a Premium member! Enjoy unlimited workflows.");
       return;
     }
 
-    setShowPaymentModal(true);
+    if (externalIsOpen === undefined) {
+      setInternalIsOpen(true);
+    }
     setPaymentStep("method");
   };
 
   const handlePaymentMethodSelect = (method) => {
     setPaymentMethod(method);
     setPaymentStep(method);
+    // Clear form errors when switching payment methods
+    setFormErrors({
+      cardNumber: "",
+      expiry: "",
+      cvv: "",
+      name: "",
+      upiId: "",
+    });
   };
 
-  const handleCardPayment = (e) => {
+  // Validation functions
+  const validateCardNumber = (cardNumber) => {
+    const cleaned = cardNumber.replace(/\s/g, '');
+    if (!cleaned) return "Card number is required";
+    if (!/^\d+$/.test(cleaned)) return "Card number must contain only digits";
+    if (cleaned.length !== 16) return "Card number must be 16 digits";
+    return "";
+  };
+
+  const validateExpiry = (expiry) => {
+    if (!expiry) return "Expiry date is required";
+    if (!/^\d{2}\/\d{2}$/.test(expiry)) return "Format must be MM/YY";
+    
+    const [month, year] = expiry.split('/').map(Number);
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear() % 100;
+    const currentMonth = currentDate.getMonth() + 1;
+
+    if (month < 1 || month > 12) return "Month must be between 01 and 12";
+    if (year < currentYear || (year === currentYear && month < currentMonth)) {
+      return "Card has expired";
+    }
+    return "";
+  };
+
+  const validateCVV = (cvv) => {
+    if (!cvv) return "CVV is required";
+    if (!/^\d+$/.test(cvv)) return "CVV must contain only digits";
+    if (cvv.length < 3 || cvv.length > 4) return "CVV must be 3 or 4 digits";
+    return "";
+  };
+
+  const validateName = (name) => {
+    if (!name.trim()) return "Name is required";
+    if (name.trim().length < 2) return "Name must be at least 2 characters";
+    if (!/^[a-zA-Z\s]+$/.test(name.trim())) return "Name can only contain letters and spaces";
+    return "";
+  };
+
+  const validateUPI = (upiId) => {
+    if (!upiId.trim()) return "UPI ID is required";
+    if (!/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(upiId.trim())) {
+      return "Please enter a valid UPI ID (e.g., name@upi)";
+    }
+    return "";
+  };
+
+  const validateForm = () => {
+    const errors = {
+      cardNumber: "",
+      expiry: "",
+      cvv: "",
+      name: "",
+      upiId: "",
+    };
+
+    if (paymentMethod === "card") {
+      errors.cardNumber = validateCardNumber(formData.cardNumber);
+      errors.expiry = validateExpiry(formData.expiry);
+      errors.cvv = validateCVV(formData.cvv);
+      errors.name = validateName(formData.name);
+    } else if (paymentMethod === "upi") {
+      errors.upiId = validateUPI(formData.upiId);
+    }
+
+    setFormErrors(errors);
+    return !Object.values(errors).some(error => error !== "");
+  };
+
+  const handleCardPayment = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      toast.error("Please fix the form errors before submitting");
+      return;
+    }
+
+    setIsSubmitting(true);
     setPaymentStep("processing");
 
     setTimeout(() => {
@@ -47,24 +146,51 @@ const PremiumUpgrade = () => {
       setTimeout(() => {
         setPaymentStep("success");
         upgradeUserToPremium();
+        setIsSubmitting(false);
       }, 2000);
     }, 1500);
+  };
+
+  const handleUPIPayment = () => {
+    if (!validateForm()) {
+      toast.error("Please enter a valid UPI ID");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setPaymentStep("processing");
+
+    setTimeout(() => {
+      setPaymentStep("success");
+      upgradeUserToPremium();
+      setIsSubmitting(false);
+    }, 2000);
   };
 
   const upgradeUserToPremium = () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     user.tier = "premium";
     localStorage.setItem("user", JSON.stringify(user));
+    toast.success("🎉 Welcome to Premium! You now have unlimited workflow access.");
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ""
+      }));
+    }
+
     if (name === "cardNumber") {
       const formattedValue = value
         .replace(/\s/g, "")
         .replace(/(\d{4})/g, "$1 ")
-        .trim();
+        .trim()
+        .slice(0, 19); // Limit to 16 digits + 3 spaces
       setFormData((prev) => ({
         ...prev,
         [name]: formattedValue,
@@ -73,12 +199,40 @@ const PremiumUpgrade = () => {
     }
 
     if (name === "expiry") {
-      const formattedValue = value
-        .replace(/\D/g, "")
-        .replace(/(\d{2})(\d)/, "$1/$2");
+      let formattedValue = value.replace(/\D/g, "").slice(0, 4);
+      if (formattedValue.length >= 2) {
+        formattedValue = formattedValue.slice(0, 2) + "/" + formattedValue.slice(2);
+      }
       setFormData((prev) => ({
         ...prev,
         [name]: formattedValue,
+      }));
+      return;
+    }
+
+    if (name === "cvv") {
+      const formattedValue = value.replace(/\D/g, "").slice(0, 4);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: formattedValue,
+      }));
+      return;
+    }
+
+    if (name === "name") {
+      // Allow only letters and spaces
+      const formattedValue = value.replace(/[^a-zA-Z\s]/g, "");
+      setFormData((prev) => ({
+        ...prev,
+        [name]: formattedValue,
+      }));
+      return;
+    }
+
+    if (name === "upiId") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
       }));
       return;
     }
@@ -87,6 +241,69 @@ const PremiumUpgrade = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleInputBlur = (e) => {
+    const { name, value } = e.target;
+    
+    if (paymentMethod === "card") {
+      switch (name) {
+        case "cardNumber":
+          setFormErrors(prev => ({
+            ...prev,
+            cardNumber: validateCardNumber(value)
+          }));
+          break;
+        case "expiry":
+          setFormErrors(prev => ({
+            ...prev,
+            expiry: validateExpiry(value)
+          }));
+          break;
+        case "cvv":
+          setFormErrors(prev => ({
+            ...prev,
+            cvv: validateCVV(value)
+          }));
+          break;
+        case "name":
+          setFormErrors(prev => ({
+            ...prev,
+            name: validateName(value)
+          }));
+          break;
+        default:
+          break;
+      }
+    } else if (paymentMethod === "upi" && name === "upiId") {
+      setFormErrors(prev => ({
+        ...prev,
+        upiId: validateUPI(value)
+      }));
+    }
+  };
+
+  const handleModalClose = () => {
+    handleClose();
+    setPaymentStep("method");
+    setFormData({
+      cardNumber: "",
+      expiry: "",
+      cvv: "",
+      name: "",
+      upiId: "",
+    });
+    setFormErrors({
+      cardNumber: "",
+      expiry: "",
+      cvv: "",
+      name: "",
+      upiId: "",
+    });
+    setIsSubmitting(false);
+    if (paymentStep === "success") {
+      window.location.reload();
+    }
   };
 
   const userWorkflows = JSON.parse(
@@ -114,7 +331,7 @@ const PremiumUpgrade = () => {
         {buttonText}
       </button>
 
-      {showPaymentModal && (
+      {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
           <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-gray-200">
@@ -264,7 +481,7 @@ const PremiumUpgrade = () => {
               <div className="p-6">
                 <div className="flex items-center space-x-2 mb-6">
                   <button
-                    onClick={() => setPaymentStep("method")}
+                    onClick={() => handlePaymentMethodSelect("method")}
                     className="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer p-1 hover:bg-gray-100 rounded"
                   >
                     <svg
@@ -288,70 +505,95 @@ const PremiumUpgrade = () => {
                 <form onSubmit={handleCardPayment} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Card Number
+                      Card Number <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       name="cardNumber"
                       value={formData.cardNumber}
                       onChange={handleInputChange}
+                      onBlur={handleInputBlur}
                       placeholder="4242 4242 4242 4242"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        formErrors.cardNumber ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       required
                       maxLength={19}
                     />
+                    {formErrors.cardNumber && (
+                      <p className="text-red-500 text-xs mt-1">{formErrors.cardNumber}</p>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Expiry Date
+                        Expiry Date <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         name="expiry"
                         value={formData.expiry}
                         onChange={handleInputChange}
+                        onBlur={handleInputBlur}
                         placeholder="MM/YY"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                          formErrors.expiry ? 'border-red-500' : 'border-gray-300'
+                        }`}
                         required
                         maxLength={5}
                       />
+                      {formErrors.expiry && (
+                        <p className="text-red-500 text-xs mt-1">{formErrors.expiry}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        CVV
+                        CVV <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         name="cvv"
                         value={formData.cvv}
                         onChange={handleInputChange}
+                        onBlur={handleInputBlur}
                         placeholder="123"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                          formErrors.cvv ? 'border-red-500' : 'border-gray-300'
+                        }`}
                         required
                         maxLength={4}
                       />
+                      {formErrors.cvv && (
+                        <p className="text-red-500 text-xs mt-1">{formErrors.cvv}</p>
+                      )}
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Name on Card
+                      Name on Card <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      placeholder="Enter your name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      onBlur={handleInputBlur}
+                      placeholder="Enter your full name"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        formErrors.name ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       required
                     />
+                    {formErrors.name && (
+                      <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>
+                    )}
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition-colors cursor-pointer shadow-sm mt-4"
+                    disabled={isSubmitting}
+                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 rounded-lg font-semibold transition-colors cursor-pointer shadow-sm mt-4 disabled:cursor-not-allowed"
                   >
-                    Pay $29.00
+                    {isSubmitting ? "Processing..." : "Pay $29.00"}
                   </button>
                 </form>
               </div>
@@ -360,7 +602,7 @@ const PremiumUpgrade = () => {
               <div className="p-6">
                 <div className="flex items-center space-x-2 mb-6">
                   <button
-                    onClick={() => setPaymentStep("method")}
+                    onClick={() => handlePaymentMethodSelect("method")}
                     className="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer p-1 hover:bg-gray-100 rounded"
                   >
                     <svg
@@ -391,20 +633,34 @@ const PremiumUpgrade = () => {
                       <p className="text-gray-900 font-semibold">$29.00</p>
                     </div>
                   </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
+                      UPI ID <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="upiId"
+                      value={formData.upiId}
+                      onChange={handleInputChange}
+                      onBlur={handleInputBlur}
+                      placeholder="yourname@upi"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        formErrors.upiId ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {formErrors.upiId && (
+                      <p className="text-red-500 text-xs mt-1 text-left">{formErrors.upiId}</p>
+                    )}
+                  </div>
                   <p className="text-gray-600 text-sm mb-4">
                     Scan this QR code to pay (Google Lens lol...)
                   </p>
                   <button
-                    onClick={() => {
-                      setPaymentStep("processing");
-                      setTimeout(() => {
-                        setPaymentStep("success");
-                        upgradeUserToPremium();
-                      }, 2000);
-                    }}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors cursor-pointer shadow-sm"
+                    onClick={handleUPIPayment}
+                    disabled={isSubmitting}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 rounded-lg font-semibold transition-colors cursor-pointer shadow-sm disabled:cursor-not-allowed"
                   >
-                    I&apos;ve Completed Payment
+                    {isSubmitting ? "Processing..." : "I've Completed Payment"}
                   </button>
                 </div>
               </div>
@@ -493,20 +749,7 @@ const PremiumUpgrade = () => {
             )}
             <div className="px-6 pb-6">
               <button
-                onClick={() => {
-                  setShowPaymentModal(false);
-                  setPaymentStep("method");
-                  setFormData({
-                    cardNumber: "",
-                    expiry: "",
-                    cvv: "",
-                    name: "",
-                    upiId: "",
-                  });
-                  if (paymentStep === "success") {
-                    window.location.reload();
-                  }
-                }}
+                onClick={handleModalClose}
                 className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg font-medium transition-colors cursor-pointer border border-gray-300"
               >
                 {paymentStep === "success"

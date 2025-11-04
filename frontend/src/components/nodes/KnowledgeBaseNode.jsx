@@ -1,14 +1,16 @@
 /* eslint-disable react/prop-types */
 import axios from "axios";
-import { BookOpen, Settings, Trash2, Unlink, Upload } from "lucide-react";
+import { BookOpen, Settings, Trash2, Unlink, Upload, FileText, AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Handle, Position } from "reactflow";
+import toast from 'react-hot-toast';
 
 const KnowledgeBaseNode = ({ data, selected, id }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [fileInputRef, setFileInputRef] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   const settingsRef = useRef(null);
 
   useEffect(() => {
@@ -33,10 +35,28 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
     setShowSettings(false);
   };
 
-  // Get result for this node
-  // const nodeResult = data.nodeResults ? data.nodeResults[id] : null;
-
   const handleUploadToBackend = async (file) => {
+    setIsUploading(true);
+    
+    const uploadToast = toast.loading(
+      <div className="flex items-center gap-3">
+        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div>
+          <p className="font-semibold text-gray-800">Uploading Document</p>
+          <p className="text-sm text-gray-600">Processing {file.name}...</p>
+        </div>
+      </div>,
+      {
+        duration: Infinity,
+        style: {
+          background: '#f0f9ff',
+          color: '#0369a1',
+          border: '1px solid #bae6fd',
+          minWidth: '320px',
+        }
+      }
+    );
+
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -54,19 +74,60 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
       );
 
       console.log("Backend response:", response.data);
-      alert("File uploaded and processed successfully!");
+
+      toast.success(
+        <div className="flex items-center gap-3">
+          <FileText className="w-5 h-5 text-green-600" />
+          <div>
+            <p className="font-semibold text-gray-800">Document Uploaded!</p>
+            <p className="text-sm text-gray-600">{file.name} processed successfully</p>
+          </div>
+        </div>,
+        {
+          id: uploadToast,
+          duration: 4000,
+          style: {
+            background: '#f0fdf4',
+            color: '#166534',
+            border: '1px solid #bbf7d0',
+            minWidth: '320px',
+          }
+        }
+      );
 
       if (response.data.file_id) {
         console.log("File processed with ID:", response.data.file_id);
       }
     } catch (err) {
       console.error("Upload failed:", err);
+      
+      let errorMessage = "Upload failed: Could not connect to server";
       if (err.response) {
         console.error("Response error:", err.response.data);
-        alert(`Upload failed: ${err.response.data.detail || "Unknown error"}`);
-      } else {
-        alert("Upload failed: Could not connect to server");
+        errorMessage = `Upload failed: ${err.response.data.detail || "Unknown error"}`;
       }
+
+      toast.error(
+        <div className="flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600" />
+          <div>
+            <p className="font-semibold text-gray-800">Upload Failed</p>
+            <p className="text-sm text-gray-600">{errorMessage}</p>
+          </div>
+        </div>,
+        {
+          id: uploadToast,
+          duration: 5000,
+          style: {
+            background: '#fef3f2',
+            color: '#b91c1c',
+            border: '1px solid #fecaca',
+            minWidth: '320px',
+          }
+        }
+      );
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -85,7 +146,24 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
         };
         reader.readAsText(file);
       } else {
-        alert("Please upload a PDF or text file only.");
+        toast.error(
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600" />
+            <div>
+              <p className="font-semibold text-gray-800">Invalid File Type</p>
+              <p className="text-sm text-gray-600">Please upload a PDF or text file only</p>
+            </div>
+          </div>,
+          {
+            duration: 4000,
+            style: {
+              background: '#fef3f2',
+              color: '#b91c1c',
+              border: '1px solid #fecaca',
+              minWidth: '320px',
+            }
+          }
+        );
       }
     }
   };
@@ -114,7 +192,9 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
   };
 
   const handleUploadClick = () => {
-    fileInputRef?.click();
+    if (!isUploading) {
+      fileInputRef?.click();
+    }
   };
 
   return (
@@ -186,25 +266,44 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
             onChange={handleFileSelect}
             accept=".pdf,.txt"
             className="hidden"
+            disabled={isUploading}
           />
           <div
-            className={`w-full px-3 py-8 border-2 border-dashed rounded-md text-center text-sm cursor-pointer transition-colors ${
-              isDragOver
+            className={`w-full px-3 py-8 border-2 border-dashed rounded-md text-center text-sm cursor-pointer transition-all ${
+              isUploading
+                ? 'border-yellow-400 bg-yellow-50 cursor-not-allowed animate-pulse'
+                : isDragOver
                 ? "border-green-500 bg-green-50"
                 : uploadedFile
                 ? "border-green-500 bg-green-50"
-                : "border-green-300 hover:border-green-400"
+                : "border-green-300 hover:border-green-400 hover:bg-green-50"
             }`}
             onClick={handleUploadClick}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
           >
-            <Upload className="mx-auto h-5 w-5 text-green-400 mb-2" />
-            {uploadedFile ? (
-              <p className="text-green-600 font-medium">{uploadedFile.name}</p>
+            {isUploading ? (
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                <p className="text-green-600 font-medium">Uploading...</p>
+                <p className="text-xs text-green-500">Processing document</p>
+              </div>
             ) : (
-              <p>Upload File</p>
+              <>
+                <Upload className="mx-auto h-5 w-5 text-green-400 mb-2" />
+                {uploadedFile ? (
+                  <div>
+                    <p className="text-green-600 font-medium">{uploadedFile.name}</p>
+                    <p className="text-xs text-green-500 mt-1">Click to upload different file</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p>Upload PDF or Text File</p>
+                    <p className="text-xs text-gray-500 mt-1">Drag & drop or click to browse</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

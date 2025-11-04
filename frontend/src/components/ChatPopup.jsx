@@ -13,23 +13,28 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+  const [sessionId] = useState(() => {
+    return localStorage.getItem("chatSessionId") || `session_${Date.now()}`;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("chatSessionId", sessionId);
+  }, [sessionId]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Load conversation history from localStorage on component mount
   useEffect(() => {
-    const savedMessages = localStorage.getItem('chatConversationHistory');
+    const savedMessages = localStorage.getItem("chatConversationHistory");
     if (savedMessages) {
       setMessages(JSON.parse(savedMessages));
     }
   }, []);
 
-  // Save conversation history to localStorage whenever messages change
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem('chatConversationHistory', JSON.stringify(messages));
+      localStorage.setItem("chatConversationHistory", JSON.stringify(messages));
     }
   }, [messages]);
 
@@ -55,21 +60,31 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
       console.log("📋 Workflow nodes:", workflow.nodes?.length);
       console.log("🔗 Workflow edges:", workflow.edges?.length);
 
-      // Call the workflow execution API
-      const response = await axios.post('http://localhost:8000/api/workflows/run', {
-        workflow: {
-          nodes: workflow.nodes || [],
-          edges: workflow.edges || []
-        },
-        query: inputMessage
-      });
-
+      const response = await axios.post(
+        "http://localhost:8000/api/workflows/run",
+        {
+          workflow: {
+            nodes:
+              workflow.nodes?.map((node) => ({
+                id: node.id,
+                type: node.type,
+                data: {
+                  ...node.data,
+                  config: node.data.config || {},
+                },
+              })) || [],
+            edges: workflow.edges || [],
+          },
+          query: inputMessage.trim(),
+          session_id: sessionId,
+        }
+      );
       console.log("✅ Workflow response received:", response.data);
 
-      // FIX: Use final_output instead of response
-      const aiResponseText = response.data.final_output || 
-                            response.data.response || 
-                            "No response received from workflow";
+      const aiResponseText =
+        response.data.final_output ||
+        response.data.response ||
+        "No response received from workflow";
 
       const aiResponse = {
         id: Date.now() + 1,
@@ -80,22 +95,25 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
           minute: "2-digit",
         }),
       };
-      
+
       setMessages((prev) => [...prev, aiResponse]);
-      
     } catch (error) {
       console.error("❌ Workflow execution failed:", error);
-      
+
       const errorMessage = {
         id: Date.now() + 1,
-        text: `Error: ${error.response?.data?.detail || error.response?.data?.message || 'Failed to execute workflow. Please check your configuration.'}`,
-        sender: "ai", 
+        text: `Error: ${
+          error.response?.data?.detail ||
+          error.response?.data?.message ||
+          "Failed to execute workflow. Please check your configuration."
+        }`,
+        sender: "ai",
         timestamp: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         }),
       };
-      
+
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsRunning(false);
@@ -111,7 +129,7 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
 
   const clearChatHistory = () => {
     setMessages([]);
-    localStorage.removeItem('chatConversationHistory');
+    localStorage.removeItem("chatConversationHistory");
   };
 
   if (!isOpen) return null;
@@ -222,7 +240,11 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={!workflow ? "Build a workflow first to start chatting" : "Send a message"}
+              placeholder={
+                !workflow
+                  ? "Build a workflow first to start chatting"
+                  : "Send a message"
+              }
               className="w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
               rows="1"
               style={{ minHeight: "48px", maxHeight: "120px" }}
@@ -242,7 +264,8 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
           </div>
           {!workflow && (
             <p className="text-orange-500 text-xs mt-2 text-center">
-              ⚠️ Drag and connect nodes on the canvas, then click &apos;Build Stack&apos; before chatting
+              ⚠️ Drag and connect nodes on the canvas, then click &apos;Build
+              Stack&apos; before chatting
             </p>
           )}
         </div>

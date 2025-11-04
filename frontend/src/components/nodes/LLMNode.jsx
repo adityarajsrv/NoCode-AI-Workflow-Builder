@@ -7,18 +7,19 @@ import axios from "axios";
 
 const LLMNode = ({ data, selected, id }) => {
   const [showSettings, setShowSettings] = useState(false);
-  const [model, setModel] = useState("gemini-2.5-flash");
-  const [apiKey, setApiKey] = useState("");
+  const [config, setConfig] = useState({
+    model: "gemini-2.5-flash",
+    apiKey: "",
+    temperature: 0.75,
+    useWebSearch: false,
+    serpApiKey: "",
+    additionalPrompt: "",
+  });
   const [showApiKey, setShowApiKey] = useState(false);
-  const [temperature, setTemperature] = useState(0.75);
-  const [useWebSearch, setUseWebSearch] = useState(true);
-  const [serpApiKey, setSerpApiKey] = useState("");
   const [showSerpKey, setShowSerpKey] = useState(false);
-  const [additionalPrompt, setAdditionalPrompt] = useState("");
   const settingsRef = useRef(null);
 
-  const { context: inputContext = "", query: inputQuery = "" } =
-    data.inputs || {};
+  const { context: inputContext = "", query: inputQuery = "" } = data.inputs || {};
 
   const fixedTemplate = `You are a helpful PDF assistant. Use web search if the PDF lacks context.
 
@@ -34,6 +35,13 @@ USER QUERY: {query}`;
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Update the node configuration when changes happen
+  useEffect(() => {
+    if (data.onConfigUpdate) {
+      data.onConfigUpdate(id, config);
+    }
+  }, [config, data.onConfigUpdate, id]);
 
   const handleDeleteNode = () => {
     if (data.onDelete) data.onDelete(id);
@@ -52,14 +60,14 @@ USER QUERY: {query}`;
   }, [data.inputs]);
 
   const runLLMQuery = async (query, context = "") => {
-    if (!query || !apiKey) {
+    if (!query || !config.apiKey) {
       console.log("Missing query or API key");
       return;
     }
 
     const fullTemplate =
       fixedTemplate +
-      (additionalPrompt.trim() ? `\n\n${additionalPrompt}` : "");
+      (config.additionalPrompt.trim() ? `\n\n${config.additionalPrompt}` : "");
     const processedPrompt = fullTemplate
       .replace("{context}", context)
       .replace("{query}", query);
@@ -67,20 +75,20 @@ USER QUERY: {query}`;
     try {
       console.log("Sending LLM request with:", {
         prompt: processedPrompt,
-        temperature,
-        api_key: apiKey,
-        model,
-        use_websearch: useWebSearch,
-        serp_api_key: serpApiKey,
+        temperature: config.temperature,
+        api_key: config.apiKey,
+        model: config.model,
+        use_websearch: config.useWebSearch,
+        serp_api_key: config.serpApiKey,
       });
 
       const res = await axios.post("http://localhost:8000/api/llm/", {
         prompt: processedPrompt,
-        temperature: temperature,
-        api_key: apiKey,
-        model: model,
-        use_websearch: useWebSearch, // This enables web search
-        serp_api_key: serpApiKey, // This provides the API key
+        temperature: config.temperature,
+        api_key: config.apiKey,
+        model: config.model,
+        use_websearch: config.useWebSearch,
+        serp_api_key: config.serpApiKey,
       });
 
       const output = res.data.reply || "No response received";
@@ -94,7 +102,7 @@ USER QUERY: {query}`;
       }
     }
   };
-  
+
   const modelOptions = [
     { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro (Most Advanced)" },
     {
@@ -122,7 +130,14 @@ USER QUERY: {query}`;
 
   const toggleApiKeyVisibility = () => setShowApiKey(!showApiKey);
   const toggleSerpKeyVisibility = () => setShowSerpKey(!showSerpKey);
-  // const nodeResult = data.nodeResults ? data.nodeResults[id] : null;
+
+  // Update config helper functions
+  const updateModel = (model) => setConfig(prev => ({ ...prev, model }));
+  const updateApiKey = (apiKey) => setConfig(prev => ({ ...prev, apiKey }));
+  const updateTemperature = (temperature) => setConfig(prev => ({ ...prev, temperature }));
+  const updateUseWebSearch = (useWebSearch) => setConfig(prev => ({ ...prev, useWebSearch }));
+  const updateSerpApiKey = (serpApiKey) => setConfig(prev => ({ ...prev, serpApiKey }));
+  const updateAdditionalPrompt = (additionalPrompt) => setConfig(prev => ({ ...prev, additionalPrompt }));
 
   return (
     <div
@@ -199,8 +214,8 @@ USER QUERY: {query}`;
             Model
           </label>
           <select
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
+            value={config.model}
+            onChange={(e) => updateModel(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             {modelOptions.map((option) => (
@@ -218,8 +233,8 @@ USER QUERY: {query}`;
           <div className="relative">
             <input
               type={showApiKey ? "text" : "password"}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              value={config.apiKey}
+              onChange={(e) => updateApiKey(e.target.value)}
               placeholder="Enter your Gemini API key"
               className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
@@ -254,8 +269,8 @@ USER QUERY: {query}`;
             Additional Instructions (optional)
           </label>
           <textarea
-            value={additionalPrompt}
-            onChange={(e) => setAdditionalPrompt(e.target.value)}
+            value={config.additionalPrompt}
+            onChange={(e) => updateAdditionalPrompt(e.target.value)}
             placeholder="Enter any additional instructions here..."
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
@@ -270,8 +285,8 @@ USER QUERY: {query}`;
             min="0"
             max="2"
             step="0.05"
-            value={temperature}
-            onChange={(e) => setTemperature(parseFloat(e.target.value))}
+            value={config.temperature}
+            onChange={(e) => updateTemperature(parseFloat(e.target.value))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
         </div>
@@ -283,8 +298,8 @@ USER QUERY: {query}`;
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
-              checked={useWebSearch}
-              onChange={() => setUseWebSearch(!useWebSearch)}
+              checked={config.useWebSearch}
+              onChange={(e) => updateUseWebSearch(e.target.checked)}
               className="sr-only peer"
             />
             <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-green-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:after:translate-x-full"></div>
@@ -299,16 +314,16 @@ USER QUERY: {query}`;
           <div className="relative">
             <input
               type={showSerpKey ? "text" : "password"}
-              value={serpApiKey}
-              onChange={(e) => setSerpApiKey(e.target.value)}
-              disabled={!useWebSearch}
+              value={config.serpApiKey}
+              onChange={(e) => updateSerpApiKey(e.target.value)}
+              disabled={!config.useWebSearch}
               placeholder="Enter your SerpAPI key for web search"
               className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
             <button
               type="button"
               onClick={toggleSerpKeyVisibility}
-              disabled={!useWebSearch}
+              disabled={!config.useWebSearch}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Eye className="w-4 h-4" />

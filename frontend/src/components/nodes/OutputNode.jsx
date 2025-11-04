@@ -32,7 +32,7 @@ const OutputNode = ({ data, selected, id }) => {
   const handleResetConnections = () => { if (data.onResetConnections) data.onResetConnections(id); setShowSettings(false); };
 
   // Get result for this node
-  const nodeResult = data.nodeResults ? data.nodeResults[id] : null;
+  // const nodeResult = data.nodeResults ? data.nodeResults[id] : null;
 
   return (
     <div className={`shadow-lg rounded-lg bg-white min-w-80 ${selected ? 'ring-2 ring-gray-300' : ''}`}>
@@ -81,9 +81,6 @@ const OutputNode = ({ data, selected, id }) => {
       </div>
       <div className="px-5 py-2 text-sm flex flex-starit text-gray-600 bg-blue-100">
         Output of the result nodes as text
-        {nodeResult && (
-          <span className="ml-2 text-green-600 font-medium">✓ Tested</span>
-        )}
       </div>
       <div className="space-y-3">
         <div className='px-3 py-2'>
@@ -95,11 +92,6 @@ const OutputNode = ({ data, selected, id }) => {
             readOnly
             value={outputText}
           />
-          {nodeResult && (
-            <div className="mt-1 text-xs text-green-600">
-              Last test: {new Date(nodeResult.timestamp).toLocaleTimeString()}
-            </div>
-          )}
         </div>
       </div>
       <h3 className="flex justify-start text-sm ml-2 pb-5">Output</h3>
