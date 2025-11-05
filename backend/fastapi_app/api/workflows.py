@@ -39,6 +39,7 @@ def build_workflow(req: BuildRequest):
         logger.error(f"Workflow build failed: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
+# In your workflows.py - update the run endpoint
 @router.post("/run")
 async def run_workflow(request: dict):
     """
@@ -48,27 +49,29 @@ async def run_workflow(request: dict):
         # Extract data from request body
         workflow_data = request.get("workflow", {})
         query = request.get("query", "")
+        session_id = request.get("session_id", "default")  # Add session support
         
         if not workflow_data:
             raise HTTPException(status_code=400, detail="Workflow data is required")
         if not query:
             raise HTTPException(status_code=400, detail="Query is required")
         
-        logger.info(f"🚀 Running workflow with query: {query}")
+        logger.info(f"🚀 Running workflow with query: {query}, session: {session_id}")
         
-        # Execute workflow
-        result = execute_workflow(workflow_data, query)
+        # Execute workflow with session context
+        result = execute_workflow(workflow_data, query, session_id)
         
         return {
             "success": True,
             "final_output": result["final_output"],
-            "node_results": result["node_results"]
+            "node_results": result["node_results"],
+            "session_id": session_id
         }
         
     except Exception as e:
         logger.error(f"Workflow execution failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
+    
 @router.get("/validate/{workflow_id}")
 def validate_workflow(workflow_id: str):
     """

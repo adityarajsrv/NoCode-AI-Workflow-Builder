@@ -7,7 +7,7 @@ logger = get_logger("embeddings")
 class LocalEmbedder:
     def __init__(self):
         self.model = None
-        self.model_name = "all-MiniLM-L6-v2"  # Fast, free, reliable
+        self.model_name = "all-MiniLM-L6-v2"  
         self.is_loaded = False
         self.load_model()
     
@@ -57,10 +57,9 @@ class LocalEmbedder:
         """Simple fallback if model fails"""
         logger.warning("Using fallback embedding method")
         embeddings = []
-        embedding_size = 384  # Same as MiniLM
+        embedding_size = 384  
         
         for i, text in enumerate(texts):
-            # Create deterministic embeddings based on text content
             np.random.seed(hash(text) % 10000)
             embedding = np.random.normal(0, 1, embedding_size).tolist()
             embeddings.append(embedding)
@@ -68,7 +67,6 @@ class LocalEmbedder:
         logger.info(f"📦 Generated {len(embeddings)} fallback embeddings")
         return embeddings
 
-# Global instance - this will load automatically when imported
 local_embedder = LocalEmbedder()
 
 def embed_texts(texts: list[str]) -> list[list[float]]:

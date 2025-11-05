@@ -70,8 +70,8 @@ def call_gemini(prompt: str, model: str = "gemini-2.5-flash", temperature: float
         
         # Fallback strategy
         try:
-            logger.info("Trying fallback with gemini-1.5-flash")
-            fallback_model = genai.GenerativeModel("gemini-1.5-flash")
+            logger.info("Trying fallback with gemini-2.5-flash")
+            fallback_model = genai.GenerativeModel("gemini-2.5-flash")
             response = fallback_model.generate_content(prompt)
             return response.text.strip()
         except Exception as fallback_error:
