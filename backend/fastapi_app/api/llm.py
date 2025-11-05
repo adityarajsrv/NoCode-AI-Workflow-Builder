@@ -23,17 +23,14 @@ def chat_with_llm(req: LLMRequest):
         logger.info(f"Received LLM request for model: {req.model}")
         logger.info(f"Web search enabled: {req.use_websearch}")
         
-        # Use provided API key or environment key
         effective_api_key = req.api_key or os.getenv("GEMINI_API_KEY")
         if not effective_api_key:
             raise HTTPException(status_code=400, detail="No Gemini API key provided. Please provide an API key or set GEMINI_API_KEY environment variable.")
         
-        # Build the final prompt
         final_prompt = ""
         if req.prompt:
             final_prompt = req.prompt
         else:
-            # Build default prompt structure
             base_context = req.context or "No context provided from documents."
             final_prompt = f"""You are a helpful AI assistant. Use the provided context to answer questions accurately.
 
@@ -52,7 +49,6 @@ Please provide a helpful answer based on the context above. If the context doesn
         if req.use_websearch:
             logger.info("Web search enabled, fetching results")
             
-            # Use provided SerpAPI key or environment key
             serp_api_key = req.serp_api_key or os.getenv("SERPAPI_KEY")
             
             if not serp_api_key:
@@ -67,7 +63,7 @@ Please provide a helpful answer based on the context above. If the context doesn
                         web_search_used = True
                         web_context = "\n\nADDITIONAL INFORMATION FROM WEB SEARCH:\n"
                         web_context += "\n".join([f"• {result.get('snippet', 'No snippet available')}" 
-                                                for result in web_results[:3]])  # Get top 3 results
+                                                for result in web_results[:3]])  
                         
                         # Add the web context to the final prompt
                         final_prompt += web_context
@@ -82,16 +78,14 @@ Please provide a helpful answer based on the context above. If the context doesn
                     web_context = f"\n\nNote: Web search encountered an error: {str(web_error)}"
                     final_prompt += web_context
         
-        # Log the final prompt (truncated for logs)
         logger.info(f"Final prompt length: {len(final_prompt)} characters")
         logger.debug(f"Final prompt: {final_prompt[:500]}...")
         
-        # Call Gemini with the specified model and API key
         response = call_gemini(
             prompt=final_prompt,
             model=req.model,
             temperature=req.temperature,
-            api_key=effective_api_key  # Pass the API key to the function
+            api_key=effective_api_key  
         )
         
         return {

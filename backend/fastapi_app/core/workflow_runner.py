@@ -8,7 +8,6 @@ import os
 
 logger = get_logger("workflow_runner")
 
-# Simple conversation memory implementation
 class ConversationMemory:
     def __init__(self, max_history: int = 10):
         self.max_history = max_history
@@ -24,7 +23,6 @@ class ConversationMemory:
             "timestamp": datetime.datetime.now().isoformat()
         })
         
-        # Keep only recent history
         if len(self.conversations[session_id]) > self.max_history:
             self.conversations[session_id] = self.conversations[session_id][-self.max_history:]
     
@@ -36,29 +34,26 @@ class ConversationMemory:
         if not history:
             return "No previous conversation context."
         
-        # Create a summary of recent conversation
         context_lines = ["Previous conversation context:"]
-        for msg in history[-4:]:  # Last 2 exchanges
+        for msg in history[-4:]:  
             role = "User" if msg["role"] == "user" else "Assistant"
             context_lines.append(f"{role}: {msg['content'][:100]}{'...' if len(msg['content']) > 100 else ''}")
         
         return "\n".join(context_lines)
 
-# Global conversation memory instance
 conversation_memory = ConversationMemory()
 
 class WorkflowExecutor:
     def __init__(self):
         self.nodes = []
         self.connections = []
-        self.node_results = {}  # Track results for each node
+        self.node_results = {}  
     
     def build_workflow(self, nodes: List[Dict], edges: List[Dict]):
         """Build and validate workflow structure"""
         self.nodes = nodes
         self.connections = edges
         
-        # Validate workflow has required components
         has_user_query = any(node.get("type") == "userQuery" for node in nodes)
         has_output = any(node.get("type") == "output" for node in nodes)
         
@@ -74,21 +69,17 @@ class WorkflowExecutor:
         """Execute the workflow with the given query and return results with node outputs"""
         logger.info(f"🚀 Starting workflow execution with query: {query}")
 
-        # Add to conversation memory
         conversation_memory.add_message(session_id, "user", query)
 
         logger.info(f"📋 Available nodes: {[node.get('type') for node in self.nodes]}")
         logger.info(f"🔗 Available connections: {len(self.connections)}")
         
-        # Reset node results for new execution
         self.node_results = {}
         
-        # Find start node (User Query)
         user_query_node = next((node for node in self.nodes if node.get("type") == "userQuery"), None)
         if not user_query_node:
             raise ValueError("No User Query node found in workflow")
         
-        # Process workflow step by step
         current_data = {"query": query}
         current_node_id = user_query_node["id"]
         
@@ -101,19 +92,15 @@ class WorkflowExecutor:
             if not current_node:
                 break
                 
-            # Process current node and store result
             current_data = self._process_node(current_node, current_data, session_id)
             
-            # Store node result for frontend display
             self._store_node_result(current_node, current_data)
             
-            # Find next node
             next_node_id = self._get_next_node(current_node_id)
             current_node_id = next_node_id
         
         final_output = current_data.get("output", "No output generated")
         
-        # Add assistant response to conversation memory
         conversation_memory.add_message(session_id, "assistant", final_output)
         
         logger.info(f"🎉 Workflow execution completed successfully")
@@ -154,12 +141,10 @@ class WorkflowExecutor:
         logger.info(f"🔄 Processing node: {node_type}")
         
         if node_type == "userQuery":
-            # User Query node - just pass the query forward
             query_text = data.get("query", "")
             return {"query": query_text, "output": query_text}
             
         elif node_type == "knowledgeBase":
-            # Knowledge Base node - retrieve context from documents
             query = data.get("query", "")
             if query:
                 logger.info(f"🔍 Querying knowledge base for: {query}")
@@ -173,16 +158,13 @@ class WorkflowExecutor:
                 }
             return data
             
-        # In workflow_runner.py - update the LLM processing section
         elif node_type == "llm":
-            # LLM node - generate response using Gemini
             query = data.get("query", "")
             context = data.get("context", "")
             
             logger.info(f"🤖 Calling LLM with query: {query[:100]}...")
             logger.info(f"📖 Context length: {len(context)} characters")
             
-            # Get LLM configuration from node data
             node_data = node.get("data", {})
             node_config = node_data.get("config", {})
             
@@ -194,10 +176,8 @@ class WorkflowExecutor:
             
             logger.info(f"🔧 LLM Config - Model: {model}, WebSearch: {use_websearch}")
             
-            # Get conversation context
             conversation_context = conversation_memory.get_context_summary(session_id)
             
-            # Build the prompt
             prompt = f"""You are an expert AI assistant with access to document context and optional web search.
 
         CONVERSATION HISTORY:
@@ -221,9 +201,7 @@ class WorkflowExecutor:
             
             logger.info(f"🚀 Calling Gemini model: {model}")
             
-            # Call the LLM directly instead of through API to avoid timeout
             try:
-                # Use direct function call to avoid API timeout issues
                 response = call_gemini(
                     prompt=prompt,
                     model=model,
@@ -245,7 +223,6 @@ class WorkflowExecutor:
             }
             
         elif node_type == "output":
-            # Output node - final result
             output = data.get("output", "No output generated")
             logger.info(f"📤 Final output ready: {output[:200]}...")
             return {"output": output}
@@ -266,16 +243,13 @@ def execute_workflow(workflow: dict, query: str, session_id: str = "default") ->
     try:
         executor = WorkflowExecutor()
         
-        # Extract nodes and edges from workflow
         nodes = workflow.get("nodes", [])
         edges = workflow.get("edges", [])
         
         logger.info(f"🏗️ Starting workflow execution with {len(nodes)} nodes and {len(edges)} edges")
         
-        # Build workflow
         executor.build_workflow(nodes, edges)
         
-        # Execute workflow and get results
         result = executor.execute_workflow(query, session_id)
         
         return result

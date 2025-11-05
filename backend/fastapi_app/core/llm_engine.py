@@ -12,23 +12,16 @@ def call_gemini(prompt: str, model: str = "gemini-2.5-flash", temperature: float
     logger.info(f"Calling Gemini LLM with model {model}, temperature {temperature}")
     
     try:
-        # Use provided API key or environment key
         effective_api_key = api_key or settings.GEMINI_API_KEY
         if not effective_api_key:
             raise ValueError("No Gemini API key provided")
         
-        # Configure with the effective API key
         genai.configure(api_key=effective_api_key)
         
-        # Official Gemini model names
         supported_models = [
             'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite',
-            'gemini-2.0-flash', 'gemini-2.0-flash-lite',
-            'gemini-flash-latest', 'gemini-pro-latest',
-            'gemini-1.5-flash', 'gemini-1.5-pro'
         ]
         
-        # Validate and use the requested model
         if model in supported_models:
             model_name = model
         else:
@@ -37,10 +30,8 @@ def call_gemini(prompt: str, model: str = "gemini-2.5-flash", temperature: float
         
         logger.info(f"Using Gemini model: {model_name}")
         
-        # Initialize the model
         model_client = genai.GenerativeModel(model_name)
         
-        # Configure generation parameters
         generation_config = {
             "temperature": temperature,
             "top_p": 0.95,
@@ -48,13 +39,11 @@ def call_gemini(prompt: str, model: str = "gemini-2.5-flash", temperature: float
             "max_output_tokens": max_tokens,
         }
         
-        # Generate content
         response = model_client.generate_content(
             prompt,
             generation_config=generation_config
         )
         
-        # Extract text from response
         if hasattr(response, 'text'):
             text = response.text
         elif hasattr(response, 'result'):
@@ -68,7 +57,6 @@ def call_gemini(prompt: str, model: str = "gemini-2.5-flash", temperature: float
     except Exception as e:
         logger.error(f"Gemini API call failed with model {model}: {str(e)}")
         
-        # Fallback strategy
         try:
             logger.info("Trying fallback with gemini-2.5-flash")
             fallback_model = genai.GenerativeModel("gemini-2.5-flash")

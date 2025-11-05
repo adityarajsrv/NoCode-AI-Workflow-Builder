@@ -8,8 +8,8 @@ class Workflow(Base):
     id = Column(String(36), primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     description = Column(Text)
-    nodes = Column(JSON, nullable=False)  # Store node configurations
-    edges = Column(JSON, nullable=False)  # Store connection edges
+    nodes = Column(JSON, nullable=False)  
+    edges = Column(JSON, nullable=False)  
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

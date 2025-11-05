@@ -28,7 +28,7 @@ class ConversationMemory:
             return "No previous conversation context."
         
         context_lines = ["Previous conversation context:"]
-        for msg in history[-4:]:  # Last 2 exchanges
+        for msg in history[-4:]:  
             role = "User" if msg["role"] == "user" else "Assistant"
             context_lines.append(f"{role}: {msg['content']}")
         

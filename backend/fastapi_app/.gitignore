@@ -45,8 +45,10 @@ config.yml
 # ============================
 # ChromaDB vector store (local database)
 chroma_store/
-chroma_data/
+chroma_db/
 chromadb/
+*.chromadb/
+
 # Temporary uploads
 uploads/
 temp/

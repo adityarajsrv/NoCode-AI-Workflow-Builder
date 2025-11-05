@@ -3,7 +3,6 @@ from utils.logger import get_logger
 
 logger = get_logger("vectorstore")
 
-# Initialize persistent client with simple configuration
 try:
     client = chromadb.PersistentClient(path="./chroma_db")
     logger.info("✅ ChromaDB client initialized successfully")
@@ -11,7 +10,6 @@ except Exception as e:
     logger.error(f"❌ Failed to initialize ChromaDB: {e}")
     raise e
 
-# Create or get collection
 try:
     collection = client.get_or_create_collection(name="documents")
     logger.info("✅ ChromaDB collection 'documents' ready")
@@ -52,7 +50,6 @@ def query_similar(query_text: str, n_results: int = 3):
             include=["documents", "metadatas", "distances"]
         )
         
-        # Format the results
         formatted_results = []
         if results["documents"] and results["documents"][0]:
             for i in range(len(results["documents"][0])):

@@ -25,7 +25,6 @@ def build_workflow(req: BuildRequest):
         nodes = req.workflow.get("nodes", [])
         edges = req.workflow.get("edges", [])
         
-        # Validate workflow
         executor.build_workflow(nodes, edges)
         
         return {
@@ -39,17 +38,15 @@ def build_workflow(req: BuildRequest):
         logger.error(f"Workflow build failed: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
-# In your workflows.py - update the run endpoint
 @router.post("/run")
 async def run_workflow(request: dict):
     """
     Run workflow and return both final output and node results
     """
     try:
-        # Extract data from request body
         workflow_data = request.get("workflow", {})
         query = request.get("query", "")
-        session_id = request.get("session_id", "default")  # Add session support
+        session_id = request.get("session_id", "default")  
         
         if not workflow_data:
             raise HTTPException(status_code=400, detail="Workflow data is required")
@@ -58,7 +55,6 @@ async def run_workflow(request: dict):
         
         logger.info(f"🚀 Running workflow with query: {query}, session: {session_id}")
         
-        # Execute workflow with session context
         result = execute_workflow(workflow_data, query, session_id)
         
         return {

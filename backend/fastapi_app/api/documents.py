@@ -10,12 +10,10 @@ from utils.logger import get_logger
 router = APIRouter()
 logger = get_logger("api.documents")
 
-# Ensure upload directory exists
 os.makedirs(settings.UPLOAD_FOLDER, exist_ok=True)
 
 @router.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
-    # Validate file type
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
     
@@ -27,13 +25,11 @@ async def upload_document(file: UploadFile = File(...)):
     save_path = os.path.join(settings.UPLOAD_FOLDER, f"{file_id}_{file.filename}")
     
     try:
-        # Save the file
         content = await file.read()
         with open(save_path, "wb") as f:
             f.write(content)
         logger.info(f"Saved uploaded file to {save_path}")
 
-        # Extract text based on file type
         if filename.endswith(".pdf"):
             text = extract_text_from_pdf(save_path)
         else:
@@ -64,7 +60,6 @@ async def upload_document(file: UploadFile = File(...)):
         
     except Exception as e:
         logger.error(f"Error processing file: {str(e)}")
-        # Clean up the saved file if there was an error
         if os.path.exists(save_path):
             os.remove(save_path)
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
