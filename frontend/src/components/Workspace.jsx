@@ -53,8 +53,6 @@ const Workspace = () => {
   const [isChatIconHighlighted, setIsChatIconHighlighted] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [isBuilding, setIsBuilding] = useState(false);
-
-  // Enhanced Guide states
   const [showGuide, setShowGuide] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [guideAnimation, setGuideAnimation] = useState("enter");
@@ -143,7 +141,6 @@ const Workspace = () => {
       } else {
         setShowGuide(false);
         localStorage.setItem("workspaceGuideSeen", "true");
-        // Show welcome completion toast
         toast.success(
           <div className="flex items-center gap-3">
             <Rocket className="w-5 h-5 text-green-600" />
@@ -184,17 +181,14 @@ const Workspace = () => {
     }, 300);
   };
 
-  // Fixed useEffect - removed unused firstVisit variable
   useEffect(() => {
     const guideSeen = localStorage.getItem("workspaceGuideSeen");
     
     if (guideSeen) {
       setShowGuide(false);
     } else {
-      // Mark first visit
       localStorage.setItem("firstWorkspaceVisit", "true");
 
-      // Small delay to let the workspace load first
       const timer = setTimeout(() => {
         setShowGuide(true);
       }, 1000);
@@ -203,7 +197,6 @@ const Workspace = () => {
     }
   }, []);
 
-  // Color mapping for guide steps
   const colorMap = {
     blue: {
       bg: "bg-blue-100",
@@ -240,7 +233,6 @@ const Workspace = () => {
   const currentColor =
     colorMap[guideSteps[currentStep]?.color] || colorMap.blue;
 
-  // Quick Help Button State
   const [showQuickHelp, setShowQuickHelp] = useState(false);
 
   const handleDeleteNode = useCallback(
@@ -316,7 +308,6 @@ const Workspace = () => {
 
       setNodes((nds) => nds.concat(newNode));
 
-      // Show success toast for first node
       if (nodes.length === 0) {
         toast.success("Great! Now connect it to other nodes", {
           duration: 3000,
@@ -617,7 +608,6 @@ const Workspace = () => {
         }}
       />
 
-      {/* Enhanced Step-by-Step Guide Modal */}
       {showGuide && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
@@ -628,7 +618,6 @@ const Workspace = () => {
             }`}
           >
             <div className="p-6">
-              {/* Header */}
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center space-x-3">
                   <div
@@ -655,13 +644,11 @@ const Workspace = () => {
                 </button>
               </div>
 
-              {/* Content */}
               <div className="mb-6">
                 <p className="text-gray-700 leading-relaxed">
                   {guideSteps[currentStep].description}
                 </p>
 
-                {/* Tips Section */}
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-yellow-500" />
@@ -678,9 +665,7 @@ const Workspace = () => {
                 </div>
               </div>
 
-              {/* Progress & Navigation */}
               <div className="flex justify-between items-center">
-                {/* Progress Dots */}
                 <div className="flex space-x-2">
                   {guideSteps.map((_, index) => (
                     <button
@@ -701,7 +686,6 @@ const Workspace = () => {
                   ))}
                 </div>
 
-                {/* Navigation Buttons */}
                 <div className="flex space-x-3">
                   {currentStep > 0 && (
                     <button
@@ -736,7 +720,6 @@ const Workspace = () => {
         </div>
       )}
 
-      {/* Quick Help Button - Always Available */}
       {!showGuide && (
         <div className="absolute top-4 left-4 z-40">
           <button
