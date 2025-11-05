@@ -128,8 +128,8 @@ const LoginPopup = ({ isOpen, onClose, onLoginSuccess }) => {
         className="bg-white rounded-2xl shadow-2xl w-[450px] px-10 py-3 border border-gray-100"
       >
         <div className="flex items-center justify-center mb-2">
-          <img src={logo} alt="GenAI Stack" className="h-11 w-11 mr-1" />
-          <h2 className="text-2xl font-bold text-gray-900">GenAI Stack</h2>
+          <img src={logo} alt="FlowMind AI" className="h-11 w-11 mr-1" />
+          <h2 className="text-2xl font-bold text-gray-900">FlowMind AI</h2>
         </div>                
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">

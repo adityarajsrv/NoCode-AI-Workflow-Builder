@@ -64,7 +64,7 @@ const Navbar = () => {
         <Link to="/">
           <div className='flex flex-row space-x-3 items-center'>
             <img src={logo} alt="" className='h-10 w-10'/>
-            <h1 className='font-semibold text-xl text-gray-900'>GenAI Stack</h1>
+            <h1 className='font-semibold text-xl text-gray-900'>FlowMind AI</h1>
           </div>
         </Link>
         <div className="flex items-center space-x-4">

@@ -141,7 +141,7 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
           <div className="flex items-center gap-3">
             <div className="flex flex-row space-x-1">
               <img src={logo} alt="" className="h-10 w-10 mt-1" />
-              <h1 className="font-semibold text-xl mt-2">GenAI Stack</h1>
+              <h1 className="font-semibold text-xl mt-2">FlowMind AI</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -166,7 +166,7 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
             <div className="flex flex-col items-center justify-center h-full text-center">
               <div className="flex flex-row space-x-1">
                 <img src={logo} alt="" className="h-9 w-9 mt-1.5" />
-                <h1 className="font-semibold text-xl mt-2">GenAI Stack Chat</h1>
+                <h1 className="font-semibold text-xl mt-2">FlowMind AI Chat</h1>
               </div>
               <p className="text-gray-600 text-md ml-2">
                 Start a conversation to test your stack

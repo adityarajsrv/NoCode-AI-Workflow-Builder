@@ -179,7 +179,7 @@ const Dashboard = () => {
       {!isLoggedIn ? (
         <div className="flex flex-row justify-center items-center px-4">
           <div className="bg-white h-48 w-full max-w-md rounded-xl shadow-md mt-20 p-6 text-center">
-            <h2 className="text-2xl font-semibold mb-3">Welcome to GenAI Stack</h2>
+            <h2 className="text-2xl font-semibold mb-3">Welcome to FlowMind AI</h2>
             <p className="text-gray-500 py-1 mb-4">
               Please login to start building your AI workflows and create amazing stacks!
             </p>
