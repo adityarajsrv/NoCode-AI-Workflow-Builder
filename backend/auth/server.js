@@ -21,7 +21,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/stacks', require('./routes/stackRoutes'));
 
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'GenAI Stack API is running!' });
+  res.json({ message: 'FlowMind AI API is running!' });
 });
 
 app.get('/api/health', (req, res) => {
