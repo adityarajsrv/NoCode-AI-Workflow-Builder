@@ -56,6 +56,8 @@ const Workspace = () => {
   const [showGuide, setShowGuide] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [guideAnimation, setGuideAnimation] = useState("enter");
+  // Add state to track if workflow has been built
+  const [isWorkflowBuilt, setIsWorkflowBuilt] = useState(false);
 
   const guideSteps = [
     {
@@ -201,32 +203,32 @@ const Workspace = () => {
     blue: {
       bg: "bg-blue-100",
       text: "text-blue-600",
-      button: "bg-blue-600 hover:bg-blue-700",
+      button: "bg-blue-600 hover:bg-blue-700 cursor-pointer",
     },
     green: {
       bg: "bg-green-100",
       text: "text-green-600",
-      button: "bg-green-600 hover:bg-green-700",
+      button: "bg-green-600 hover:bg-green-700 cursor-pointer",
     },
     purple: {
       bg: "bg-purple-100",
       text: "text-purple-600",
-      button: "bg-purple-600 hover:bg-purple-700",
+      button: "bg-purple-600 hover:bg-purple-700 cursor-pointer",
     },
     orange: {
       bg: "bg-orange-100",
       text: "text-orange-600",
-      button: "bg-orange-600 hover:bg-orange-700",
+      button: "bg-orange-600 hover:bg-orange-700 cursor-pointer",
     },
     red: {
       bg: "bg-red-100",
       text: "text-red-600",
-      button: "bg-red-600 hover:bg-red-700",
+      button: "bg-red-600 hover:bg-red-700 cursor-pointer",
     },
     yellow: {
       bg: "bg-yellow-100",
       text: "text-yellow-600",
-      button: "bg-yellow-600 hover:bg-yellow-700",
+      button: "bg-yellow-600 hover:bg-yellow-700 cursor-pointer",
     },
   };
 
@@ -374,7 +376,7 @@ const Workspace = () => {
         testQuery = nodeResults[userQueryNode.id].data;
       }
 
-      const buildResponse = await axios.post(
+      await axios.post(
         "http://localhost:8000/api/workflows/build",
         {
           workflow: {
@@ -391,7 +393,7 @@ const Workspace = () => {
         }
       );
 
-      console.log("✅ Workflow built successfully:", buildResponse.data);
+      console.log("✅ Workflow built successfully");
 
       toast.success(
         <div className="flex items-center gap-3">
@@ -448,7 +450,7 @@ const Workspace = () => {
         const existingTests = JSON.parse(
           localStorage.getItem("workflowTestHistory") || "[]"
         );
-        const updatedTests = [...existingTests, testConversation].slice(-10); // Keep last 10 tests
+        const updatedTests = [...existingTests, testConversation].slice(-10); 
         localStorage.setItem(
           "workflowTestHistory",
           JSON.stringify(updatedTests)
@@ -479,6 +481,8 @@ const Workspace = () => {
           }
         );
 
+        // Set workflow as built to enable chat
+        setIsWorkflowBuilt(true);
         showChatNotification();
         setNodes((nds) =>
           nds.map((node) => ({
@@ -543,11 +547,32 @@ const Workspace = () => {
     }, 4000);
   };
 
+  const handleChatClick = () => {
+    if (!isWorkflowBuilt) {
+      toast.error("Please build your workflow first before chatting!", {
+        icon: "🚫",
+        style: {
+          background: "#fef3f2",
+          color: "#b91c1c",
+          border: "1px solid #fecaca",
+        },
+      });
+      return;
+    }
+    setIsChatOpen(true);
+    setIsChatIconHighlighted(false);
+    setShowNotification(false);
+  };
+
   useEffect(() => {
     const savedTests = JSON.parse(
       localStorage.getItem("workflowTestHistory") || "[]"
     );
     setConversationHistory(savedTests);
+    // Check if there's existing conversation history to enable chat
+    if (savedTests.length > 0) {
+      setIsWorkflowBuilt(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -579,6 +604,8 @@ const Workspace = () => {
   const clearWorkflowHistory = () => {
     localStorage.removeItem("workflowTestHistory");
     setConversationHistory([]);
+    // Also reset the workflow built state when clearing history
+    setIsWorkflowBuilt(false);
 
     toast.success("Workflow test history cleared!", {
       style: {
@@ -638,7 +665,7 @@ const Workspace = () => {
                 </div>
                 <button
                   onClick={handleSkipGuide}
-                  className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-lg"
+                  className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-lg"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -724,7 +751,7 @@ const Workspace = () => {
         <div className="absolute top-4 left-4 z-40">
           <button
             onClick={() => setShowQuickHelp(!showQuickHelp)}
-            className="p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all cursor-pointer border border-gray-200 group"
+            className="px-3 py-2.5 bg-white rounded-full shadow-xl scale-100 hover:scale-105 hover:shadow-2xl hover:border-yellow-300 transition-all cursor-pointer border border-gray-200 group"
           >
             <span className="text-lg group-hover:scale-110 transition-transform">
               💡
@@ -774,11 +801,19 @@ const Workspace = () => {
                     <strong>Click play button</strong> to test your workflow
                   </p>
                 </div>
+                <div className="flex items-start space-x-2">
+                  <div className="w-6 h-6 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    5
+                  </div>
+                  <p>
+                    <strong>Chat button</strong> becomes available after successful build
+                  </p>
+                </div>
               </div>
 
               <button
                 onClick={() => setShowQuickHelp(false)}
-                className="w-full mt-4 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium transition-colors"
+                className="cursor-pointer w-full mt-4 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium transition-colors"
               >
                 Got it!
               </button>
@@ -789,7 +824,7 @@ const Workspace = () => {
                   setShowGuide(true);
                   setCurrentStep(0);
                 }}
-                className="w-full mt-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
+                className="cursor-pointer w-full mt-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
               >
                 Show Full Tutorial
               </button>
@@ -844,7 +879,7 @@ const Workspace = () => {
             <span>{conversationHistory.length} test conversation(s) saved</span>
             <button
               onClick={clearWorkflowHistory}
-              className="text-blue-600 hover:text-blue-800 text-xs underline"
+              className="text-blue-600 hover:text-blue-800 text-xs underline cursor-pointer"
             >
               Clear
             </button>
@@ -895,21 +930,19 @@ const Workspace = () => {
       <div className="absolute bottom-4 right-5 flex items-center gap-2">
         {hoveredIcon === "chat" && (
           <div className="bg-white text-black px-2 py-2 rounded-md text-sm font-medium whitespace-nowrap shadow-lg">
-            Chat with Stack
+            {isWorkflowBuilt ? "Chat with Stack" : "Build workflow first"}
           </div>
         )}
         <div
-          className={`p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-all duration-500 flex items-center justify-center ${
-            isChatIconHighlighted
-              ? "bg-gradient-to-r from-blue-500 to-purple-600 animate-pulse ring-4 ring-blue-300 transform scale-110"
-              : "bg-blue-600 hover:bg-blue-700"
+          className={`p-3 rounded-full shadow-lg transition-all duration-500 flex items-center justify-center ${
+            isWorkflowBuilt
+              ? isChatIconHighlighted
+                ? "bg-gradient-to-r from-blue-500 to-purple-600 animate-pulse ring-4 ring-blue-300 transform scale-110 cursor-pointer"
+                : "bg-blue-600 hover:bg-blue-700 cursor-pointer hover:shadow-xl"
+              : "bg-gray-400 cursor-not-allowed opacity-70"
           }`}
-          onClick={() => {
-            setIsChatOpen(true);
-            setIsChatIconHighlighted(false);
-            setShowNotification(false);
-          }}
-          onMouseEnter={() => setHoveredIcon("chat")}
+          onClick={handleChatClick}
+          onMouseEnter={() => isWorkflowBuilt && setHoveredIcon("chat")}
           onMouseLeave={() => setHoveredIcon(null)}
         >
           <MessageCircleMore className="w-5 h-5 text-white" />

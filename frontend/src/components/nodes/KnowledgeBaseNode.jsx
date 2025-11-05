@@ -313,7 +313,6 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
           </label>
           <div className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-50">
             <span className="text-green-600 font-medium">all-MiniLM-L6-v2</span>
-            <span className="text-gray-500 ml-2">(Local - Free & Fast)</span>
           </div>
         </div>
       </div>

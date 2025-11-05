@@ -19,7 +19,8 @@ const LLMNode = ({ data, selected, id }) => {
   const [showSerpKey, setShowSerpKey] = useState(false);
   const settingsRef = useRef(null);
 
-  const { context: inputContext = "", query: inputQuery = "" } = data.inputs || {};
+  const { context: inputContext = "", query: inputQuery = "" } =
+    data.inputs || {};
 
   const fixedTemplate = `You are a helpful PDF assistant. Use web search if the PDF lacks context.
 
@@ -113,31 +114,19 @@ USER QUERY: {query}`;
       value: "gemini-2.5-flash-lite",
       label: "Gemini 2.5 Flash-Lite (Ultra Fast)",
     },
-    {
-      value: "gemini-2.0-flash",
-      label: "Gemini 2.0 Flash (Previous Generation)",
-    },
-    {
-      value: "gemini-2.0-flash-lite",
-      label: "Gemini 2.0 Flash-Lite (Previous Generation)",
-    },
-    {
-      value: "gemini-flash-latest",
-      label: "Gemini Flash Latest (Auto-updating)",
-    },
-    { value: "gemini-pro-latest", label: "Gemini Pro Latest (Auto-updating)" },
   ];
 
   const toggleApiKeyVisibility = () => setShowApiKey(!showApiKey);
   const toggleSerpKeyVisibility = () => setShowSerpKey(!showSerpKey);
 
-  // Update config helper functions
-  const updateModel = (model) => setConfig(prev => ({ ...prev, model }));
-  const updateApiKey = (apiKey) => setConfig(prev => ({ ...prev, apiKey }));
-  const updateTemperature = (temperature) => setConfig(prev => ({ ...prev, temperature }));
-  const updateUseWebSearch = (useWebSearch) => setConfig(prev => ({ ...prev, useWebSearch }));
-  const updateSerpApiKey = (serpApiKey) => setConfig(prev => ({ ...prev, serpApiKey }));
-  const updateAdditionalPrompt = (additionalPrompt) => setConfig(prev => ({ ...prev, additionalPrompt }));
+  const updateModel = (model) => setConfig((prev) => ({ ...prev, model }));
+  const updateApiKey = (apiKey) => setConfig((prev) => ({ ...prev, apiKey }));
+  const updateUseWebSearch = (useWebSearch) =>
+    setConfig((prev) => ({ ...prev, useWebSearch }));
+  const updateSerpApiKey = (serpApiKey) =>
+    setConfig((prev) => ({ ...prev, serpApiKey }));
+  const updateAdditionalPrompt = (additionalPrompt) =>
+    setConfig((prev) => ({ ...prev, additionalPrompt }));
 
   return (
     <div
@@ -275,22 +264,6 @@ USER QUERY: {query}`;
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Temperature
-          </label>
-          <input
-            type="number"
-            min="0"
-            max="2"
-            step="0.05"
-            value={config.temperature}
-            onChange={(e) => updateTemperature(parseFloat(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-        </div>
-
         <div className="flex items-center justify-between pt-2">
           <label className="text-sm font-medium text-gray-700">
             WebSearch Tool
@@ -338,7 +311,7 @@ USER QUERY: {query}`;
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 mt-90 !bg-purple-700"
+        className="w-3 h-3 mt-80 !bg-purple-700"
       />
     </div>
   );

@@ -78,7 +78,7 @@ const UserQueryNode = ({ data, selected, id }) => {
         />
       </div>
 
-      <h3 className="flex justify-end text-sm mr-2 pb-5">Query Output</h3>
+      <h3 className="flex justify-end text-sm mr-2 pb-5">Query Input</h3>
       <Handle type="source" position={Position.Right} className="w-3 h-3 mt-28 p-0.75 !bg-purple-700" />
     </div>
   );

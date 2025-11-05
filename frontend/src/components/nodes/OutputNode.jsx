@@ -19,7 +19,6 @@ const OutputNode = ({ data, selected, id }) => {
   }, []);
 
   useEffect(() => {
-    // Get result for this node
     const nodeResult = data.nodeResults ? data.nodeResults[id] : null;
     if (nodeResult && nodeResult.data) {
       setOutputText(nodeResult.data);
