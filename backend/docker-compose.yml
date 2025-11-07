@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  auth-service:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    container_name: flowmindai_auth
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./auth/.env
+    restart: always
+    networks:
+      - nocode_network
+
+  workflow-service:
+    build:
+      context: ./fastapi_app
+      dockerfile: Dockerfile
+    container_name: flowmindai_fastapi
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./fastapi_app/.env
+    restart: always
+    depends_on:
+      - auth-service
+    networks:
+      - nocode_network
+
+networks:
+  nocode_network:
+    driver: bridge

@@ -13,11 +13,18 @@ const protect = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select('-password');
     
-    if (!req.user) {
+    if (!user) {
       return res.status(401).json({ success: false, message: 'User not found' });
     }
+
+    req.user = {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      tier: user.tier 
+    };
 
     next();
   } catch (error) {

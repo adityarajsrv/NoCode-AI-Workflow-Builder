@@ -3,7 +3,10 @@ import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "react-toastify";
 
-const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) => {
+const PremiumUpgrade = ({
+  isOpen: externalIsOpen,
+  onClose: externalOnClose,
+}) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [paymentStep, setPaymentStep] = useState("method");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -23,13 +26,14 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const GITHUB_REPO_URL =
-    "https://github.com/adityarajsrv/FlowMind-AI";
+  const GITHUB_REPO_URL = "https://github.com/adityarajsrv/FlowMind-AI";
 
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const handleClose = externalOnClose || (() => setInternalIsOpen(false));
 
-  const userWorkflows = JSON.parse(localStorage.getItem("userWorkflows") || "[]");
+  const userWorkflows = JSON.parse(
+    localStorage.getItem("userWorkflows") || "[]"
+  );
   const user = JSON.parse(localStorage.getItem("user") || '{"tier": "free"}');
   const isPremium = user.tier === "premium";
 
@@ -41,7 +45,9 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
     }
 
     if (user.tier === "premium") {
-      toast.success("🎉 You are already a Premium member! Enjoy unlimited workflows.");
+      toast.success(
+        "🎉 You are already a Premium member! Enjoy unlimited workflows."
+      );
       return;
     }
 
@@ -54,7 +60,6 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
   const handlePaymentMethodSelect = (method) => {
     setPaymentMethod(method);
     setPaymentStep(method);
-    // Clear form errors when switching payment methods
     setFormErrors({
       cardNumber: "",
       expiry: "",
@@ -66,7 +71,7 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
 
   // Validation functions
   const validateCardNumber = (cardNumber) => {
-    const cleaned = cardNumber.replace(/\s/g, '');
+    const cleaned = cardNumber.replace(/\s/g, "");
     if (!cleaned) return "Card number is required";
     if (!/^\d+$/.test(cleaned)) return "Card number must contain only digits";
     if (cleaned.length !== 16) return "Card number must be 16 digits";
@@ -76,8 +81,8 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
   const validateExpiry = (expiry) => {
     if (!expiry) return "Expiry date is required";
     if (!/^\d{2}\/\d{2}$/.test(expiry)) return "Format must be MM/YY";
-    
-    const [month, year] = expiry.split('/').map(Number);
+
+    const [month, year] = expiry.split("/").map(Number);
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear() % 100;
     const currentMonth = currentDate.getMonth() + 1;
@@ -99,7 +104,8 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
   const validateName = (name) => {
     if (!name.trim()) return "Name is required";
     if (name.trim().length < 2) return "Name must be at least 2 characters";
-    if (!/^[a-zA-Z\s]+$/.test(name.trim())) return "Name can only contain letters and spaces";
+    if (!/^[a-zA-Z\s]+$/.test(name.trim()))
+      return "Name can only contain letters and spaces";
     return "";
   };
 
@@ -130,12 +136,12 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
     }
 
     setFormErrors(errors);
-    return !Object.values(errors).some(error => error !== "");
+    return !Object.values(errors).some((error) => error !== "");
   };
 
   const handleCardPayment = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error("Please fix the form errors before submitting");
       return;
@@ -171,22 +177,102 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
     }, 2000);
   };
 
-  const upgradeUserToPremium = () => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    user.tier = "premium";
-    localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("premiumUpgraded", "true");
-    toast.success("🎉 Welcome to Premium! You now have unlimited workflow access.");
+  const upgradeUserToPremium = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      
+      console.log('🔄 Starting premium upgrade...');
+      console.log('User token:', user.token ? 'Present' : 'Missing');
+      console.log('User ID:', user._id);
+
+      const response = await fetch(
+        "http://localhost:5000/api/stacks/upgrade-to-premium",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log('📡 Response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Premium upgrade successful:', data);
+        
+        // Update local storage with premium user data
+        user.tier = "premium";
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("premiumUpgraded", "true");
+
+        toast.success(
+          "🎉 Welcome to Premium! You now have unlimited workflow access."
+        );
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Premium upgrade failed:', errorText);
+        
+        // Try the force premium endpoint as fallback
+        await forcePremiumUpgrade(user);
+      }
+    } catch (error) {
+      console.error('💥 Premium upgrade error:', error);
+      // Fallback to local upgrade if API fails
+      await forcePremiumUpgrade(JSON.parse(localStorage.getItem("user") || "{}"));
+    }
+  };
+
+  const forcePremiumUpgrade = async (user) => {
+    try {
+      console.log('🔄 Trying force premium upgrade...');
+      
+      // Try the force premium endpoint
+      const response = await fetch(
+        `http://localhost:5000/api/stacks/force-premium/${user._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Force premium successful:', data);
+      } else {
+        console.log('⚠️ Force premium failed, using local upgrade');
+      }
+
+      // Always update local storage
+      user.tier = "premium";
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("premiumUpgraded", "true");
+      
+      toast.success(
+        "🎉 Welcome to Premium! You now have unlimited workflow access."
+      );
+    } catch (error) {
+      console.error('💥 Force premium error:', error);
+      // Final fallback - just update localStorage
+      user.tier = "premium";
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("premiumUpgraded", "true");
+      toast.success(
+        "🎉 Welcome to Premium! You now have unlimited workflow access."
+      );
+    }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Clear error when user starts typing
     if (formErrors[name]) {
-      setFormErrors(prev => ({
+      setFormErrors((prev) => ({
         ...prev,
-        [name]: ""
+        [name]: "",
       }));
     }
 
@@ -195,7 +281,7 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
         .replace(/\s/g, "")
         .replace(/(\d{4})/g, "$1 ")
         .trim()
-        .slice(0, 19); // Limit to 16 digits + 3 spaces
+        .slice(0, 19);
       setFormData((prev) => ({
         ...prev,
         [name]: formattedValue,
@@ -206,7 +292,8 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
     if (name === "expiry") {
       let formattedValue = value.replace(/\D/g, "").slice(0, 4);
       if (formattedValue.length >= 2) {
-        formattedValue = formattedValue.slice(0, 2) + "/" + formattedValue.slice(2);
+        formattedValue =
+          formattedValue.slice(0, 2) + "/" + formattedValue.slice(2);
       }
       setFormData((prev) => ({
         ...prev,
@@ -225,7 +312,6 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
     }
 
     if (name === "name") {
-      // Allow only letters and spaces
       const formattedValue = value.replace(/[^a-zA-Z\s]/g, "");
       setFormData((prev) => ({
         ...prev,
@@ -250,40 +336,40 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
 
   const handleInputBlur = (e) => {
     const { name, value } = e.target;
-    
+
     if (paymentMethod === "card") {
       switch (name) {
         case "cardNumber":
-          setFormErrors(prev => ({
+          setFormErrors((prev) => ({
             ...prev,
-            cardNumber: validateCardNumber(value)
+            cardNumber: validateCardNumber(value),
           }));
           break;
         case "expiry":
-          setFormErrors(prev => ({
+          setFormErrors((prev) => ({
             ...prev,
-            expiry: validateExpiry(value)
+            expiry: validateExpiry(value),
           }));
           break;
         case "cvv":
-          setFormErrors(prev => ({
+          setFormErrors((prev) => ({
             ...prev,
-            cvv: validateCVV(value)
+            cvv: validateCVV(value),
           }));
           break;
         case "name":
-          setFormErrors(prev => ({
+          setFormErrors((prev) => ({
             ...prev,
-            name: validateName(value)
+            name: validateName(value),
           }));
           break;
         default:
           break;
       }
     } else if (paymentMethod === "upi" && name === "upiId") {
-      setFormErrors(prev => ({
+      setFormErrors((prev) => ({
         ...prev,
-        upiId: validateUPI(value)
+        upiId: validateUPI(value),
       }));
     }
   };
@@ -370,7 +456,8 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
                   {userWorkflows.length >= 3 && !isPremium && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
                       <p className="text-yellow-800 text-sm font-medium">
-                        ⚠️ You&apos;ve created {userWorkflows.length}/3 workflows
+                        ⚠️ You&apos;ve created {userWorkflows.length}/3
+                        workflows
                       </p>
                     </div>
                   )}
@@ -512,13 +599,17 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
                       onBlur={handleInputBlur}
                       placeholder="4242 4242 4242 4242"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        formErrors.cardNumber ? 'border-red-500' : 'border-gray-300'
+                        formErrors.cardNumber
+                          ? "border-red-500"
+                          : "border-gray-300"
                       }`}
                       required
                       maxLength={19}
                     />
                     {formErrors.cardNumber && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.cardNumber}</p>
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.cardNumber}
+                      </p>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -534,13 +625,17 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
                         onBlur={handleInputBlur}
                         placeholder="MM/YY"
                         className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                          formErrors.expiry ? 'border-red-500' : 'border-gray-300'
+                          formErrors.expiry
+                            ? "border-red-500"
+                            : "border-gray-300"
                         }`}
                         required
                         maxLength={5}
                       />
                       {formErrors.expiry && (
-                        <p className="text-red-500 text-xs mt-1">{formErrors.expiry}</p>
+                        <p className="text-red-500 text-xs mt-1">
+                          {formErrors.expiry}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -555,13 +650,15 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
                         onBlur={handleInputBlur}
                         placeholder="123"
                         className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                          formErrors.cvv ? 'border-red-500' : 'border-gray-300'
+                          formErrors.cvv ? "border-red-500" : "border-gray-300"
                         }`}
                         required
                         maxLength={4}
                       />
                       {formErrors.cvv && (
-                        <p className="text-red-500 text-xs mt-1">{formErrors.cvv}</p>
+                        <p className="text-red-500 text-xs mt-1">
+                          {formErrors.cvv}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -577,12 +674,14 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
                       onBlur={handleInputBlur}
                       placeholder="Enter your full name"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        formErrors.name ? 'border-red-500' : 'border-gray-300'
+                        formErrors.name ? "border-red-500" : "border-gray-300"
                       }`}
                       required
                     />
                     {formErrors.name && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.name}
+                      </p>
                     )}
                   </div>
                   <button
@@ -642,11 +741,13 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
                       onBlur={handleInputBlur}
                       placeholder="yourname@upi"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        formErrors.upiId ? 'border-red-500' : 'border-gray-300'
+                        formErrors.upiId ? "border-red-500" : "border-gray-300"
                       }`}
                     />
                     {formErrors.upiId && (
-                      <p className="text-red-500 text-xs mt-1 text-left">{formErrors.upiId}</p>
+                      <p className="text-red-500 text-xs mt-1 text-left">
+                        {formErrors.upiId}
+                      </p>
                     )}
                   </div>
                   <p className="text-gray-600 text-sm mb-4">

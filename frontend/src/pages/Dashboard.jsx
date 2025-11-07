@@ -261,7 +261,6 @@ const Dashboard = () => {
               </p>
               <button
                 onClick={() => {
-                  // Trigger premium upgrade modal
                   const premiumButton = document.querySelector('[class*="Go Premium"]');
                   if (premiumButton) premiumButton.click();
                 }}
