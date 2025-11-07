@@ -24,10 +24,14 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const GITHUB_REPO_URL =
-    "https://github.com/adityarajsrv/NoCode-AI-Workflow-Builder";
+    "https://github.com/adityarajsrv/FlowMind-AI";
 
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const handleClose = externalOnClose || (() => setInternalIsOpen(false));
+
+  const userWorkflows = JSON.parse(localStorage.getItem("userWorkflows") || "[]");
+  const user = JSON.parse(localStorage.getItem("user") || '{"tier": "free"}');
+  const isPremium = user.tier === "premium";
 
   const handleUpgradeClick = () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -171,6 +175,7 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     user.tier = "premium";
     localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("premiumUpgraded", "true");
     toast.success("🎉 Welcome to Premium! You now have unlimited workflow access.");
   };
 
@@ -306,27 +311,20 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
     }
   };
 
-  const userWorkflows = JSON.parse(
-    localStorage.getItem("userWorkflows") || "[]"
-  );
-  const user = JSON.parse(localStorage.getItem("user") || '{"tier": "free"}');
+  const buttonText = isPremium
+    ? "🎉 Premium"
+    : `🚀 Go Premium ${userWorkflows.length >= 3 ? "(Limit Reached!)" : ""}`;
 
-  const buttonText =
-    user.tier === "premium"
-      ? "🎉 Premium"
-      : `🚀 Go Premium ${userWorkflows.length >= 3 ? "(Limit Reached!)" : ""}`;
-
-  const buttonClass =
-    user.tier === "premium"
-      ? "ml-4 px-4 py-2 bg-green-600 text-white rounded-full font-semibold cursor-default shadow-sm border border-green-700"
-      : "ml-4 px-4 py-2 bg-blue-500 text-white rounded-full font-semibold hover:bg-blue-600 transition-all shadow-sm hover:shadow cursor-pointer";
+  const buttonClass = isPremium
+    ? "ml-4 px-4 py-2 bg-green-600 text-white rounded-full font-semibold cursor-default shadow-sm border border-green-700"
+    : "ml-4 px-4 py-2 bg-blue-500 text-white rounded-full font-semibold hover:bg-blue-600 transition-all shadow-sm hover:shadow cursor-pointer";
 
   return (
     <>
       <button
         onClick={handleUpgradeClick}
         className={buttonClass}
-        disabled={user.tier === "premium"}
+        disabled={isPremium}
       >
         {buttonText}
       </button>
@@ -343,7 +341,7 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
                 <div>
                   <h2 className="text-xl font-bold">Upgrade to Premium</h2>
                   <p className="text-purple-100 text-sm">
-                    {userWorkflows.length >= 3
+                    {userWorkflows.length >= 3 && !isPremium
                       ? "You've reached the free tier limit!"
                       : "Unlock unlimited workflows"}
                   </p>
@@ -369,11 +367,10 @@ const PremiumUpgrade = ({ isOpen: externalIsOpen, onClose: externalOnClose }) =>
                       </div>
                     </div>
                   </div>
-                  {userWorkflows.length >= 3 && (
+                  {userWorkflows.length >= 3 && !isPremium && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
                       <p className="text-yellow-800 text-sm font-medium">
-                        ⚠️ You&apos;ve created {userWorkflows.length}/3
-                        workflows
+                        ⚠️ You&apos;ve created {userWorkflows.length}/3 workflows
                       </p>
                     </div>
                   )}

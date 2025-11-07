@@ -44,7 +44,8 @@ const Dashboard = () => {
 
   const isLoggedIn = user && user.token;
   const userStacks = stacks || [];
-  const canCreateMoreStacks = userStacks.length < 3;
+  const isPremium = user?.tier === 'premium';
+  const canCreateMoreStacks = isPremium || userStacks.length < 3;
 
   const handleCreateStack = async (stackData) => {
     if (!isLoggedIn) {
@@ -149,7 +150,9 @@ const Dashboard = () => {
       )}
       
       <div className="flex flex-row justify-between px-6 md:px-20 mt-8 md:mt-15">
-        <h2 className="text-xl md:text-2xl font-semibold mt-2">My Stacks</h2>
+        <h2 className="text-xl md:text-2xl font-semibold mt-2">
+          My Stacks {isPremium && "🎉"}
+        </h2>
         <button
           onClick={handleCreateButtonClick}
           className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-green-700 transition-colors text-sm md:text-base"
@@ -197,9 +200,14 @@ const Dashboard = () => {
       ) : userStacks.length === 0 ? (
         <div className="flex flex-row justify-center items-center px-4">
           <div className="bg-white h-48 w-full max-w-md rounded-xl shadow-md mt-20 p-6">
-            <h2 className="text-xl md:text-2xl font-semibold mb-1">Create New Stack</h2>
+            <h2 className="text-xl md:text-2xl font-semibold mb-1">
+              Create New Stack {isPremium && "🎉"}
+            </h2>
             <p className="text-gray-500 py-1 mb-4">
-              Start building your generative AI apps with our essential tools and frameworks
+              {isPremium 
+                ? "You have unlimited stack creations with Premium!"
+                : "Start building your generative AI apps with our essential tools and frameworks"
+              }
             </p>
             <button
               onClick={handleCreateButtonClick}
@@ -220,6 +228,13 @@ const Dashboard = () => {
               </svg>
               New Stack
             </button>
+            {isPremium && (
+              <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-2">
+                <p className="text-green-700 text-sm font-medium">
+                  🎉 Premium Member: Unlimited stacks available!
+                </p>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -236,13 +251,34 @@ const Dashboard = () => {
             ))}
           </div>
           
-          {userStacks.length >= 3 && (
+          {userStacks.length >= 3 && !isPremium && (
             <div className="mt-6 md:mt-8 bg-yellow-50 border border-yellow-200 rounded-xl p-4 md:p-6 text-center mx-4 md:mx-0">
               <h3 className="text-lg font-semibold text-yellow-800 mb-2">
                 🚀 Ready for Unlimited Power?
               </h3>
               <p className="text-yellow-700 mb-4 text-sm md:text-base">
                 You&apos;ve reached the free tier limit of 3 stacks. Upgrade to Premium for unlimited creations!
+              </p>
+              <button
+                onClick={() => {
+                  // Trigger premium upgrade modal
+                  const premiumButton = document.querySelector('[class*="Go Premium"]');
+                  if (premiumButton) premiumButton.click();
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors cursor-pointer"
+              >
+                Upgrade to Premium
+              </button>
+            </div>
+          )}
+
+          {isPremium && userStacks.length > 0 && (
+            <div className="mt-6 md:mt-8 bg-green-50 border border-green-200 rounded-xl p-4 md:p-6 text-center mx-4 md:mx-0">
+              <h3 className="text-lg font-semibold text-green-800 mb-2">
+                🎉 Premium Benefits Active!
+              </h3>
+              <p className="text-green-700 text-sm md:text-base">
+                You can now create unlimited stacks with premium access.
               </p>
             </div>
           )}
