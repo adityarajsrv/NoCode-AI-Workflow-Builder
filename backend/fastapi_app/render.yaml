@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: flowmind-ai-backend
+    env: python
+    plan: free
+    region: singapore (Southeast Asia)
+    buildCommand: pip install -r requirements-render.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: true
+      - key: TOKENIZERS_PARALLELISM
+        value: false
+    envVarKeys:
+      - DATABASE_URL

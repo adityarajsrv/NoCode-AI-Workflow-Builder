@@ -52,3 +52,17 @@ def health_check():
         "database": "connected" if database.engine else "disconnected",
         "upload_dir": "exists" if os.path.exists("uploads") else "missing"
     }
+
+if __name__ == "__main__":
+    import os
+    import uvicorn
+    
+    if os.environ.get('RENDER'):
+        port = int(os.environ.get("PORT", 10000))
+        print(f"🚀 Starting on Render with port {port}")
+        uvicorn.run(
+            app, 
+            host="0.0.0.0", 
+            port=port,
+            workers=1
+        )
