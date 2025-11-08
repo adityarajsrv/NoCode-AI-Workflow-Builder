@@ -30,9 +30,6 @@ const OutputNode = ({ data, selected, id }) => {
   const handleDeleteNode = () => { if (data.onDelete) data.onDelete(id); setShowSettings(false); };
   const handleResetConnections = () => { if (data.onResetConnections) data.onResetConnections(id); setShowSettings(false); };
 
-  // Get result for this node
-  // const nodeResult = data.nodeResults ? data.nodeResults[id] : null;
-
   return (
     <div className={`shadow-lg rounded-lg bg-white min-w-80 ${selected ? 'ring-2 ring-gray-300' : ''}`}>
       {showSettings && (

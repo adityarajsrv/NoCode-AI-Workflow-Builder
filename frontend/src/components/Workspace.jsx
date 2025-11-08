@@ -56,8 +56,8 @@ const Workspace = () => {
   const [showGuide, setShowGuide] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [guideAnimation, setGuideAnimation] = useState("enter");
-  // Add state to track if workflow has been built
   const [isWorkflowBuilt, setIsWorkflowBuilt] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_URL;
 
   const guideSteps = [
     {
@@ -377,7 +377,7 @@ const Workspace = () => {
       }
 
       await axios.post(
-        "https://flowmind-ai-82ug.onrender.com/api/workflows/build",
+        `${API_BASE}/api/workflows/build`,
         {
           workflow: {
             nodes: nodes.map((node) => ({
@@ -415,7 +415,7 @@ const Workspace = () => {
       );
 
       const runResponse = await axios.post(
-        "https://flowmind-ai-82ug.onrender.com/api/workflows/run",
+        `${API_BASE}.com/api/workflows/run`,
         {
           workflow: {
             nodes: nodes.map((node) => ({
@@ -481,7 +481,6 @@ const Workspace = () => {
           }
         );
 
-        // Set workflow as built to enable chat
         setIsWorkflowBuilt(true);
         showChatNotification();
         setNodes((nds) =>
@@ -569,7 +568,6 @@ const Workspace = () => {
       localStorage.getItem("workflowTestHistory") || "[]"
     );
     setConversationHistory(savedTests);
-    // Check if there's existing conversation history to enable chat
     if (savedTests.length > 0) {
       setIsWorkflowBuilt(true);
     }
@@ -604,7 +602,6 @@ const Workspace = () => {
   const clearWorkflowHistory = () => {
     localStorage.removeItem("workflowTestHistory");
     setConversationHistory([]);
-    // Also reset the workflow built state when clearing history
     setIsWorkflowBuilt(false);
 
     toast.success("Workflow test history cleared!", {

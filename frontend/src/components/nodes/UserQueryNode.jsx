@@ -21,7 +21,6 @@ const UserQueryNode = ({ data, selected, id }) => {
   const handleDeleteNode = () => { if (data.onDelete) data.onDelete(id); setShowSettings(false); };
   const handleResetConnections = () => { if (data.onResetConnections) data.onResetConnections(id); setShowSettings(false); };
 
-  // Update query and notify parent
   const handleQueryChange = (newQuery) => {
     setQuery(newQuery);
     if (data.onNodeResultUpdate) {

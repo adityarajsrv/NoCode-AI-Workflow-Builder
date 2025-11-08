@@ -9,6 +9,7 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
   const [inputMessage, setInputMessage] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const messagesEndRef = useRef(null);
+  const API_BASE = import.meta.env.VITE_API_URL;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -61,7 +62,7 @@ const ChatPopup = ({ isOpen, onClose, workflow }) => {
       console.log("🔗 Workflow edges:", workflow.edges?.length);
 
       const response = await axios.post(
-        "https://flowmind-ai-82ug.onrender.com/api/workflows/run",
+        `${API_BASE}/api/workflows/run`,
         {
           workflow: {
             nodes:

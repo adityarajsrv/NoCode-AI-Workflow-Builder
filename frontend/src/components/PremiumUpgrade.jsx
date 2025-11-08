@@ -27,6 +27,7 @@ const PremiumUpgrade = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const GITHUB_REPO_URL = "https://github.com/adityarajsrv/FlowMind-AI";
+  const AUTH_API = import.meta.env.VITE_AUTH_API;
 
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const handleClose = externalOnClose || (() => setInternalIsOpen(false));
@@ -69,7 +70,6 @@ const PremiumUpgrade = ({
     });
   };
 
-  // Validation functions
   const validateCardNumber = (cardNumber) => {
     const cleaned = cardNumber.replace(/\s/g, "");
     if (!cleaned) return "Card number is required";
@@ -186,7 +186,7 @@ const PremiumUpgrade = ({
       console.log('User ID:', user._id);
 
       const response = await fetch(
-        "https://flowmind-ai-auth.onrender.com/api/stacks/upgrade-to-premium",
+        `${AUTH_API}/api/stacks/upgrade-to-premium`,
         {
           method: "POST",
           headers: {
@@ -226,7 +226,7 @@ const PremiumUpgrade = ({
       console.log('🔄 Trying force premium upgrade...');
       
       const response = await fetch(
-        `https://flowmind-ai-auth.onrender.com/api/stacks/force-premium/${user._id}`,
+        `${AUTH_API}/api/stacks/force-premium/${user._id}`,
         {
           method: "POST",
           headers: {

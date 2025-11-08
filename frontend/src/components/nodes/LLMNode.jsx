@@ -18,6 +18,7 @@ const LLMNode = ({ data, selected, id }) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [showSerpKey, setShowSerpKey] = useState(false);
   const settingsRef = useRef(null);
+  const API_BASE = import.meta.env.VITE_API_URL;
 
   const { context: inputContext = "", query: inputQuery = "" } =
     data.inputs || {};
@@ -37,7 +38,6 @@ USER QUERY: {query}`;
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Update the node configuration when changes happen
   useEffect(() => {
     if (data.onConfigUpdate) {
       data.onConfigUpdate(id, config);
@@ -83,7 +83,7 @@ USER QUERY: {query}`;
         serp_api_key: config.serpApiKey,
       });
 
-      const res = await axios.post("https://flowmind-ai-82ug.onrender.com/api/llm/", {
+      const res = await axios.post(`${API_BASE}/api/llm/`, {
         prompt: processedPrompt,
         temperature: config.temperature,
         api_key: config.apiKey,

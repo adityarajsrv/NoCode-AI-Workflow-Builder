@@ -12,6 +12,7 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
   const [fileInputRef, setFileInputRef] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const settingsRef = useRef(null);
+  const API_BASE = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -64,7 +65,7 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
       console.log("Uploading file:", file.name, file.type);
 
       const response = await axios.post(
-        "https://flowmind-ai-82ug.onrender.com/api/documents/upload",
+        `${API_BASE}/api/documents/upload`,
         formData,
         {
           headers: {

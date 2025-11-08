@@ -1,17 +1,17 @@
 import axios from "axios";
 
-const NODE_API_BASE = "https://flowmind-ai-auth.onrender.com/api"; 
-const FAST_API_BASE = "https://flowmind-ai-82ug.onrender.com/api"; 
+const API_BASE = import.meta.env.VITE_API_URL;
+const AUTH_API = import.meta.env.VITE_AUTH_API;
 
 const nodeAPI = axios.create({
-  baseURL: NODE_API_BASE,
+  baseURL: API_BASE,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
 const api = axios.create({
-  baseURL: FAST_API_BASE,
+  baseURL: AUTH_API,
   headers: {
     "Content-Type": "application/json",
   },

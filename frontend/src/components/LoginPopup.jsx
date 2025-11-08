@@ -15,8 +15,8 @@ const LoginPopup = ({ isOpen, onClose, onLoginSuccess }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const popupRef = useRef(null);
+  const AUTH_API = import.meta.env.VITE_AUTH_API;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -66,7 +66,7 @@ const LoginPopup = ({ isOpen, onClose, onLoginSuccess }) => {
             lastName: formData.lastName
           };
 
-      const response = await fetch(`https://flowmind-ai-auth.onrender.com${endpoint}`, {
+      const response = await fetch(`${AUTH_API}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
