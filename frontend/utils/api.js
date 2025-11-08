@@ -59,9 +59,9 @@ export const stackAPI = {
 };
 
 export const authAPI = {
-  login: (credentials) => nodeAPI.post("/auth/login", credentials),
-  register: (userData) => nodeAPI.post("/auth/register", userData),
-  getProfile: () => nodeAPI.get("/auth/profile"),
+  login: (credentials) => api.post("/api/auth/login", credentials),  
+  register: (userData) => api.post("/api/auth/register", userData), 
+  getProfile: () => api.get("/api/auth/me"),  
 };
 
 export const workflowAPI = {

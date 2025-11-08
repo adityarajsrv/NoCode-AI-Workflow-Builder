@@ -10,7 +10,7 @@ connectDB();
 const app = express();
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5173', process.env.CLIENT_URL],
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5173', process.env.CLIENT_URL, process.env.FASTAPI_URL],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -25,8 +25,8 @@ app.get('/api/test', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
-    success: true, 
+  res.status(200).json({
+    success: true,
     message: 'Server is healthy',
     timestamp: new Date().toISOString()
   });
