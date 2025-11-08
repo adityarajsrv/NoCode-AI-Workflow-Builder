@@ -1,6 +1,3 @@
-const dotenv = require('dotenv');
-dotenv.config();
-
 const API_BASE_URL = process.env.CLIENT_URL || 'http://localhost:5000/api';
 
 const getAuthHeaders = () => {
