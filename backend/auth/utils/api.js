@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.CLIENT_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.AUTH_URL || 'http://localhost:5000/api';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
