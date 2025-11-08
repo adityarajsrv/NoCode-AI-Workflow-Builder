@@ -1,4 +1,7 @@
-const API_BASE_URL = 'https://flowmind-ai-auth.onrender.com/api';
+const dotenv = require('dotenv');
+dotenv.config();
+
+const API_BASE_URL = process.env.AUTH_URL || 'http://localhost:5000';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -119,7 +122,7 @@ export const authAPI = {
   }
 };
 
-const FASTAPI_BASE_URL = 'http://localhost:8000/api';
+const FASTAPI_BASE_URL = process.env.FASTAPI_URL || 'http://localhost:8000';
 
 export const workflowAPI = {
   saveWorkflow: async (workflowData) => {
