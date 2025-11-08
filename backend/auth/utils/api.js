@@ -1,7 +1,7 @@
 const dotenv = require('dotenv');
 dotenv.config();
 
-const API_BASE_URL = process.env.AUTH_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.CLIENT_URL || 'http://localhost:5000/api';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -122,7 +122,7 @@ export const authAPI = {
   }
 };
 
-const FASTAPI_BASE_URL = process.env.FASTAPI_URL || 'http://localhost:8000';
+const FASTAPI_BASE_URL = 'http://localhost:8000/api';
 
 export const workflowAPI = {
   saveWorkflow: async (workflowData) => {
