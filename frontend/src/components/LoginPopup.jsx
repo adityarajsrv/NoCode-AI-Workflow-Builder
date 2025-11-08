@@ -66,7 +66,7 @@ const LoginPopup = ({ isOpen, onClose, onLoginSuccess }) => {
             lastName: formData.lastName
           };
 
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
+      const response = await fetch(`https://flowmind-ai-auth.onrender.com${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

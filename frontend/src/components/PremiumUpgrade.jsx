@@ -186,7 +186,7 @@ const PremiumUpgrade = ({
       console.log('User ID:', user._id);
 
       const response = await fetch(
-        "http://localhost:5000/api/stacks/upgrade-to-premium",
+        "https://flowmind-ai-auth.onrender.com/api/stacks/upgrade-to-premium",
         {
           method: "POST",
           headers: {
@@ -202,7 +202,6 @@ const PremiumUpgrade = ({
         const data = await response.json();
         console.log('✅ Premium upgrade successful:', data);
         
-        // Update local storage with premium user data
         user.tier = "premium";
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("premiumUpgraded", "true");
@@ -214,12 +213,10 @@ const PremiumUpgrade = ({
         const errorText = await response.text();
         console.error('❌ Premium upgrade failed:', errorText);
         
-        // Try the force premium endpoint as fallback
         await forcePremiumUpgrade(user);
       }
     } catch (error) {
       console.error('💥 Premium upgrade error:', error);
-      // Fallback to local upgrade if API fails
       await forcePremiumUpgrade(JSON.parse(localStorage.getItem("user") || "{}"));
     }
   };
@@ -228,9 +225,8 @@ const PremiumUpgrade = ({
     try {
       console.log('🔄 Trying force premium upgrade...');
       
-      // Try the force premium endpoint
       const response = await fetch(
-        `http://localhost:5000/api/stacks/force-premium/${user._id}`,
+        `https://flowmind-ai-auth.onrender.com/api/stacks/force-premium/${user._id}`,
         {
           method: "POST",
           headers: {
@@ -246,7 +242,6 @@ const PremiumUpgrade = ({
         console.log('⚠️ Force premium failed, using local upgrade');
       }
 
-      // Always update local storage
       user.tier = "premium";
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("premiumUpgraded", "true");
@@ -256,7 +251,6 @@ const PremiumUpgrade = ({
       );
     } catch (error) {
       console.error('💥 Force premium error:', error);
-      // Final fallback - just update localStorage
       user.tier = "premium";
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("premiumUpgraded", "true");

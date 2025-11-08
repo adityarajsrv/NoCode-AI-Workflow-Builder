@@ -83,7 +83,7 @@ USER QUERY: {query}`;
         serp_api_key: config.serpApiKey,
       });
 
-      const res = await axios.post("http://localhost:8000/api/llm/", {
+      const res = await axios.post("https://flowmind-ai-82ug.onrender.com/api/llm/", {
         prompt: processedPrompt,
         temperature: config.temperature,
         api_key: config.apiKey,
@@ -164,7 +164,7 @@ USER QUERY: {query}`;
         type="target"
         position={Position.Left}
         className="w-3 h-3 !bg-purple-700"
-        style={{ top: "47%" }}
+        style={{ top: "53%" }}
         onConnect={(params) => console.log("Context connected:", params)}
       />
       <Handle
@@ -172,7 +172,7 @@ USER QUERY: {query}`;
         type="target"
         position={Position.Left}
         className="w-3 h-3 !bg-purple-700"
-        style={{ top: "50%" }}
+        style={{ top: "56%" }}
         onConnect={(params) => console.log("Query connected:", params)}
       />
 

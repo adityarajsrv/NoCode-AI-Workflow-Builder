@@ -64,7 +64,7 @@ const KnowledgeBaseNode = ({ data, selected, id }) => {
       console.log("Uploading file:", file.name, file.type);
 
       const response = await axios.post(
-        "http://localhost:8000/api/documents/upload",
+        "https://flowmind-ai-82ug.onrender.com/api/documents/upload",
         formData,
         {
           headers: {

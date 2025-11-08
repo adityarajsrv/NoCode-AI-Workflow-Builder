@@ -377,7 +377,7 @@ const Workspace = () => {
       }
 
       await axios.post(
-        "http://localhost:8000/api/workflows/build",
+        "https://flowmind-ai-82ug.onrender.com/api/workflows/build",
         {
           workflow: {
             nodes: nodes.map((node) => ({
@@ -415,7 +415,7 @@ const Workspace = () => {
       );
 
       const runResponse = await axios.post(
-        "http://localhost:8000/api/workflows/run",
+        "https://flowmind-ai-82ug.onrender.com/api/workflows/run",
         {
           workflow: {
             nodes: nodes.map((node) => ({

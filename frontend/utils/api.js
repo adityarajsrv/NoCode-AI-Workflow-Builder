@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const NODE_API_BASE = "http://localhost:5000/api"; 
-const FAST_API_BASE = "http://localhost:8000/api"; 
+const NODE_API_BASE = "https://flowmind-ai-auth.onrender.com/api"; 
+const FAST_API_BASE = "https://flowmind-ai-82ug.onrender.com/api"; 
 
 const nodeAPI = axios.create({
   baseURL: NODE_API_BASE,
