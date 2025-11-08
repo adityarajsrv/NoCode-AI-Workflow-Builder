@@ -53,16 +53,16 @@ def health_check():
         "upload_dir": "exists" if os.path.exists("uploads") else "missing"
     }
 
-# if __name__ == "__main__":
-#     import os
-#     import uvicorn
+if __name__ == "__main__":
+    import os
+    import uvicorn
     
-#     if os.environ.get('RENDER'):
-#         port = int(os.environ.get("PORT", 10000))
-#         print(f"🚀 Starting on Render with port {port}")
-#         uvicorn.run(
-#             app, 
-#             host="0.0.0.0", 
-#             port=port,
-#             workers=1
-#         )
+    if os.environ.get('RENDER'):
+        port = int(os.environ.get("PORT", 10000))
+        print(f"🚀 Starting on Render with port {port}")
+        uvicorn.run(
+            app, 
+            host="0.0.0.0", 
+            port=port,
+            workers=1
+        )
