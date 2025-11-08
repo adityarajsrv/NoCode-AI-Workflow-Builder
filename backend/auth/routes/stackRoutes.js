@@ -61,14 +61,12 @@ router.post('/', protect, async (req, res) => {
             });
         }
 
-        // Check if user is premium - get fresh user data from database
         const currentUser = await User.findById(req.user._id);
         const isPremium = currentUser && currentUser.tier === 'premium';
         
         console.log('User tier from DB:', currentUser?.tier);
         console.log('User ID:', currentUser?._id);
         
-        // Only check stack limit for free users
         if (!isPremium) {
             const userStacks = await Stack.find({ user: req.user._id, isActive: true });
             console.log('User stacks count:', userStacks.length);
@@ -81,7 +79,6 @@ router.post('/', protect, async (req, res) => {
             }
         }
 
-        // Check if stack with same name already exists
         const existingStack = await Stack.findOne({ 
             user: req.user._id, 
             name: name.trim(),
@@ -204,11 +201,9 @@ router.post('/upgrade-to-premium', protect, async (req, res) => {
             tier: user.tier
         });
 
-        // Update user tier
         user.tier = 'premium';
         await user.save();
 
-        // Verify the update
         const updatedUser = await User.findById(req.user._id);
         console.log('✅ User after upgrade:', {
             id: updatedUser._id,
@@ -236,7 +231,6 @@ router.post('/upgrade-to-premium', protect, async (req, res) => {
     }
 });
 
-// Temporary route to manually fix premium status
 router.post('/force-premium/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -256,7 +250,6 @@ router.post('/force-premium/:userId', async (req, res) => {
         user.tier = 'premium';
         await user.save();
 
-        // Verify
         const updatedUser = await User.findById(userId);
         console.log('✅ User after force premium:', updatedUser.tier);
 
